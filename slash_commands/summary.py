@@ -21,13 +21,16 @@ async def summary(ctx: ApplicationContext):
     borrow_from: list[tuple[int, int]] = []
     borrow_to: list[tuple[int, int]] = []
     for key, summary in summary_data.items():
+        if summary.amount == 0:
+            continue
+
         if summary.user1 == user.id:
-            if summary.amount >= 0:
+            if summary.amount > 0:
                 borrow_to.append((key, summary.amount))
             else:
                 borrow_from.append((key, -summary.amount))
         else:
-            if summary.amount >= 0:
+            if summary.amount > 0:
                 borrow_from.append((key, summary.amount))
             else:
                 borrow_to.append((key, -summary.amount))

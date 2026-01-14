@@ -88,9 +88,12 @@ async def on_message(message: Message):
 
     try:
         amount = int(amount_str)
-        if amount <= 0:
+        if amount < 0:
             amount = -amount
             borrow_from, borrow_to = borrow_to, borrow_from
+
+        if amount == 0:
+            return
     except ValueError:
         amount = None
 
