@@ -12,6 +12,7 @@ from discord.ui import (
     View
 )
 
+from asyncio import sleep as asleep
 from datetime import datetime
 try:
     from datetime import UTC
@@ -28,6 +29,7 @@ from db import get_db
 from repository.borrow_repository import BorrowRepository
 
 SPEC_USER_ID = int(getenv("SPEC_USER_ID", "0"))
+SPEC_SHELL_PATH = getenv("SPEC_SHELL_PATH", "")
 CHANNEL_ID = int(getenv("DISCORD_TARGET_CHANNEL_ID", "0"))
 CUSTOM_ID_PREFIX = getenv("CUSTOM_ID_PREFIX", "default_prefix")
 
@@ -55,7 +57,32 @@ async def on_message(message: Message):
     
     if "毀滅" in message.content:
         if user.id == SPEC_USER_ID:
-            await message.channel.send("毀滅")
+            embed = Embed(
+                color=0xFF8800,
+                title="毀滅!!!",
+                description=f"毀滅",
+                timestamp=datetime.now(),
+                author=EmbedAuthor(
+                    name=bot_user.display_name,
+                    icon_url=bot_user.display_avatar.url,
+                ),
+                thumbnail=user.display_avatar.url,
+            )
+
+            await message.reply(
+                embed=embed
+            )
+            await asleep(1)
+            await message.channel.send("3...")
+            await asleep(1)
+            await message.channel.send("2...")
+            await asleep(1)
+            await message.channel.send("1...")
+            await asleep(1)
+            await message.channel.send("毀滅!!")
+
+            from subprocess import run
+            run([SPEC_SHELL_PATH])
         else:
             await message.reply("毀滅")
         return
