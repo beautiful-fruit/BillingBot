@@ -1,14 +1,14 @@
 from pydantic import BaseModel, Field, model_validator
+from pydantic_snowflake import SnowflakeId, SnowflakeGenerator
 
 from typing import Optional
 
-from snowflake import SnowflakeID, SnowflakeGenerator
 
 generator = SnowflakeGenerator()
 
 
 class Return(BaseModel):
-    uid: SnowflakeID = Field(default_factory=generator.next_id)
+    uid: SnowflakeId = Field(default_factory=generator.next)
     from_uid: int
     to_uid: int
     amount: int
@@ -22,7 +22,7 @@ class Return(BaseModel):
             self.amount = -self.amount
             self.from_uid, self.to_uid = self.to_uid, self.from_uid
         return self
-    
+
     @property
     def insert_query(self) -> tuple[str, tuple]:
         return """

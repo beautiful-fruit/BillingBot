@@ -1,14 +1,14 @@
 from pydantic import BaseModel, Field, model_validator
+from pydantic_snowflake import SnowflakeId, SnowflakeGenerator
 
 from typing import Optional
 
-from snowflake import SnowflakeID, SnowflakeGenerator
 
 generator = SnowflakeGenerator()
 
 
 class Borrow(BaseModel):
-    uid: SnowflakeID = Field(default_factory=generator.next_id)
+    uid: SnowflakeId = Field(default_factory=generator.next)
     from_uid: int
     to_uid: int
     amount: Optional[int] = None

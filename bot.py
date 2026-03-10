@@ -27,6 +27,7 @@ from custom_interaction.confirm_or_reject import (
 from db import get_db
 from repository.borrow_repository import BorrowRepository
 
+SPEC_USER_ID = int(getenv("SPEC_USER_ID", "0"))
 CHANNEL_ID = int(getenv("DISCORD_TARGET_CHANNEL_ID", "0"))
 CUSTOM_ID_PREFIX = getenv("CUSTOM_ID_PREFIX", "default_prefix")
 
@@ -47,6 +48,13 @@ async def on_message(message: Message):
     bot_user = bot.user
 
     if bot_user is None:
+        return
+    
+    if "毀滅" in message.content:
+        if user.id == SPEC_USER_ID:
+            await message.channel.send("毀滅")
+        else:
+            await message.reply("毀滅")
         return
 
     if message.channel.id != CHANNEL_ID or user == bot_user:
