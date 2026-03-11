@@ -86,6 +86,9 @@ async def on_message(message: Message):
         else:
             await message.reply("毀滅")
         return
+    elif "今" in message.content:
+        await message.reply("今日敢於獨行怪癖之人寥若晨星，正是這個時代大為可懼的標誌。")
+        return
 
     if message.channel.id != CHANNEL_ID or user == bot_user:
         return
