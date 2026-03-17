@@ -51,7 +51,7 @@ def checker(bot: Bot, message: Message) -> Optional[CheckResult]:
         return
     if mentions_len == 1 and mentions[0].id == user.id:
         return
-    elif user.id not in [mention.id for mention in mentions]:
+    elif mentions_len == 2 and user.id not in [mention.id for mention in mentions]:
         return
 
     return CheckResult(
