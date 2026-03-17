@@ -7,6 +7,7 @@ async def main():
     loop = get_event_loop()
 
     from bot import start
+    import slash_commands
     from db import init_db
     from timeout_manager import task as timeout_task
 
