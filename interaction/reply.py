@@ -184,10 +184,10 @@ async def reply(bot: Bot, message: Message):
         store=False
     )
 
-    await message.reply(
+    reply_message = await message.reply(
         content=f"{another_user.mention} 請於 5 分鐘內確認此筆紀錄：",
         embed=embed,
         view=views
     )
 
-    add_request(uid=uid, is_borrow=True, message=message)
+    add_request(uid=uid, is_borrow=True, message=reply_message)
