@@ -48,7 +48,7 @@ async def fun(bot: Bot, message: Message):
 
     if "今" in message.content:
         await message.reply("今日敢於獨行怪癖之人寥若晨星，正是這個時代大為可懼的標誌。")
-    
+
     if "特別怪" in message.content:
         await message.reply("特別怪")
     elif "超怪" in message.content:
@@ -57,6 +57,9 @@ async def fun(bot: Bot, message: Message):
         await message.reply("好怪")
     elif "怪" in message.content:
         await message.reply("怪")
+
+    if "❓" in message.content or ":question:" in message.content:
+        await message.reply("❓")
 
     if 712676831911739482 in list(map(lambda u: u.id, message.mentions)):
         channel = message.channel
