@@ -61,6 +61,9 @@ async def fun(bot: Bot, message: Message):
     if "❓" in message.content or ":question:" in message.content:
         await message.reply("❓")
 
+    if "好" in message.content:
+        await message.reply("不好")
+
     if 712676831911739482 in list(map(lambda u: u.id, message.mentions)):
         channel = message.channel
         main_mention = "<@712676831911739482>"
