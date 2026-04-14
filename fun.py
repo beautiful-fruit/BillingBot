@@ -83,11 +83,18 @@ async def fun(bot: Bot, message: Message):
             "<@&1474026056242696273>",
             "<@&1493488278689546330>",
             "<@&1493488655308951732>",
+            "<@&1493490700195467384>",
         ]
         content = message.content.rsplit(main_mention, 1)[-1]
         if main_mention in content:
             content = content.replace(main_mention, "")
         content = content.strip()
 
-        for mention in mentions:
-            await channel.send(f"{mention} {content}")
+        results = "\n".join([
+            f"{mention} {content}" for mention in mentions
+        ])
+
+        await channel.send(results)
+
+        # for mention in mentions:
+        #     await channel.send(f"{mention} {content}")
