@@ -8,8 +8,9 @@ from openai.types.chat import (
     ChatCompletionUserMessageParam,
     ChatCompletionAssistantMessageParam,
 )
+from json import loads, dumps
 
-import json
+from asyncio import get_event_loop
 from os import getenv
 from typing import Optional, TypeAlias, Union
 
@@ -143,20 +144,21 @@ class OpenAIService:
 
                     if isinstance(tool_call, ChatCompletionMessageFunctionToolCall):
                         function_name = tool_call.function.name
-                        function_args = json.loads(
+                        function_args = loads(
                             tool_call.function.arguments)
 
                         if function_name == "get_channel_members":
                             # 獲取頻道成員
                             members = channel.members
-                            print(f"Channel members: {[member.display_name for member in members]}")
+                            print(
+                                f"Channel members: {[member.display_name for member in members]}")
                             member_list = []
                             for member in members:
                                 member_list.append({
                                     "id": str(member.id),
                                     "name": member.display_name,
                                 })
-                            result = json.dumps(
+                            result = dumps(
                                 member_list, ensure_ascii=False)
                         elif function_name == "get_user_by_id":
                             user_id = int(function_args["user_id"])
@@ -167,7 +169,7 @@ class OpenAIService:
                                 member = None
 
                             if member:
-                                result = json.dumps({
+                                result = dumps({
                                     "id": str(member.id),
                                     "name": member.display_name,
                                     "joined_at": str(member.joined_at) if member.joined_at else None,
@@ -177,16 +179,16 @@ class OpenAIService:
                                 # 如果找不到成員，嘗試獲取使用者（可能不在公會中）
                                 res_user = bot.get_user(user_id)
                                 if res_user:
-                                    result = json.dumps({
+                                    result = dumps({
                                         "id": str(res_user.id),
                                         "name": res_user.name,
                                         "discriminator": res_user.discriminator,
                                     }, ensure_ascii=False)
                                 else:
-                                    result = json.dumps({"error": "找不到該使用者"})
+                                    result = dumps({"error": "找不到該使用者"})
 
                         else:
-                            result = json.dumps(
+                            result = dumps(
                                 {"error": f"未知工具: {function_name}"})
 
                         # 將工具回應添加到訊息中
@@ -225,12 +227,48 @@ class OpenAIService:
             total_tokens = response.usage.total_tokens if response and response.usage else 0
             print(f"Total tokens used: {total_tokens}")
             if total_tokens > self.max_tokens:
-                # 清理舊訊息以保持資料庫整潔（刪除前15%的訊息）
-                await ChatRepository.delete_old_messages(
-                    conn=conn,
-                    channel_id=channel.id,
-                    percentage=0.15
-                )
+                async def __task():
+                    messages.append({
+                        "role": "assistant",
+                        "content": final_response
+                    })
+                    messages.append({
+                        "role": "system",
+                        "content": "".join([
+                            "The conversation has exceeded the maximum token limit. ",
+                            "Please summarize the conversation and remove irrelevant details to reduce the token count while keeping the main context.",
+                            "You should keep the important information and the overall style of the conversation, but you can remove some of the less important details, such as greetings, farewells, and some of the chit-chat. ",
+                            "The goal is to reduce the total token count of the conversation history while retaining the main context and style, so that the conversation can continue without hitting the token limit.",
+                            "Please provide a concise summary of the conversation so far, and make sure to keep the important information and the overall style of the conversation. ",
+                            "The summary should be in the same format as the original messages, but you can remove some of the less important details to reduce the token count. ",
+                            "Remember to keep the main context and style of the conversation, while reducing the total token count to allow the conversation to continue."
+                        ])
+                    })
+
+                    summary_response = await self.client.chat.completions.create(
+                        model=self.model,
+                        messages=messages,
+                        temperature=0.7
+                    )
+
+                    if summary_response.choices and len(summary_response.choices) > 0:
+                        choice = summary_response.choices[0]
+                        message_response = choice.message
+                        await ChatRepository.insert(
+                            conn=conn,
+                            channel_id=channel.id,
+                            role="system",
+                            content="[Conversation Summary]: " + (message_response.content or "")
+                        )
+
+                    # 清理舊訊息以保持資料庫整潔（刪除前15%的訊息）
+                    await ChatRepository.delete_old_messages(
+                        conn=conn,
+                        channel_id=channel.id,
+                        percentage=0.15
+                    )
+                loop = get_event_loop()
+                loop.create_task(__task())
 
             return final_response
 
@@ -246,9 +284,6 @@ class OpenAIService:
 
         # 添加歷史訊息（排除系統訊息）
         for msg in history:
-            if msg.role == "system":
-                continue
-
             if msg.role == "user":
                 messages.append({
                     "role": "user",
