@@ -155,7 +155,6 @@ class OpenAIService:
                                 member_list.append({
                                     "id": str(member.id),
                                     "name": member.display_name,
-                                    "mention": member.mention
                                 })
                             result = json.dumps(
                                 member_list, ensure_ascii=False)
@@ -171,7 +170,6 @@ class OpenAIService:
                                 result = json.dumps({
                                     "id": str(member.id),
                                     "name": member.display_name,
-                                    "mention": member.mention,
                                     "joined_at": str(member.joined_at) if member.joined_at else None,
                                     "roles": [{"id": str(role.id), "name": role.name} for role in member.roles]
                                 }, ensure_ascii=False)
@@ -183,7 +181,6 @@ class OpenAIService:
                                         "id": str(res_user.id),
                                         "name": res_user.name,
                                         "discriminator": res_user.discriminator,
-                                        "mention": res_user.mention
                                     }, ensure_ascii=False)
                                 else:
                                     result = json.dumps({"error": "找不到該使用者"})
