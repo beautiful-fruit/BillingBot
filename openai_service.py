@@ -1,6 +1,9 @@
 from discord import Message, Member, User, TextChannel, Bot
 from openai import AsyncOpenAI
 from openai.types.chat import (
+    ChatCompletionMessageFunctionToolCall,
+    ChatCompletionToolMessageParam,
+    ChatCompletionToolUnionParam,
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
     ChatCompletionAssistantMessageParam,
@@ -15,9 +18,10 @@ from repository.chat_repository import ChatRepository
 from schemas.chat_message import ChatMessage
 
 AIChatMessage: TypeAlias = Union[
+    ChatCompletionToolMessageParam,
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
-    ChatCompletionAssistantMessageParam
+    ChatCompletionAssistantMessageParam,
 ]
 
 
@@ -52,8 +56,6 @@ class OpenAIService:
         channel = message.channel
         if not isinstance(channel, TextChannel):
             return "抱歉，我只能在文字頻道中回應。"
-        
-        channel_members = channel.members
 
         async with get_db() as conn:
             await ChatRepository.insert(
@@ -79,7 +81,7 @@ class OpenAIService:
             )
 
             # 定義可用工具
-            tools = [
+            tools: list[ChatCompletionToolUnionParam] = [
                 {
                     "type": "function",
                     "function": {
@@ -138,75 +140,77 @@ class OpenAIService:
 
                 # 處理工具調用
                 for tool_call in tool_calls:
-                    function_name = tool_call.function.name
-                    function_args = json.loads(tool_call.function.arguments)
-                    
-                    if function_name == "get_channel_members":
-                        # 獲取頻道成員
-                        members = channel.members
-                        member_list = []
-                        for member in members:
-                            member_list.append({
-                                "id": str(member.id),
-                                "name": member.display_name,
-                                "mention": member.mention
-                            })
-                        result = json.dumps(member_list, ensure_ascii=False)
-                    
-                    elif function_name == "get_user_by_id":
-                        user_id = int(function_args["user_id"])
-                        # 嘗試從頻道獲取成員，否則從公會獲取
-                        member = channel.guild.get_member(user_id)
-                        if member is None:
+
+                    if isinstance(tool_call, ChatCompletionMessageFunctionToolCall):
+                        function_name = tool_call.function.name
+                        function_args = json.loads(
+                            tool_call.function.arguments)
+
+                        if function_name == "get_channel_members":
+                            # 獲取頻道成員
+                            members = channel.members
+                            member_list = []
+                            for member in members:
+                                member_list.append({
+                                    "id": str(member.id),
+                                    "name": member.display_name,
+                                    "mention": member.mention
+                                })
+                            result = json.dumps(
+                                member_list, ensure_ascii=False)
+                        elif function_name == "get_user_by_id":
+                            user_id = int(function_args["user_id"])
+                            # 嘗試從頻道獲取成員，否則從公會獲取
                             try:
                                 member = channel.guild.get_member(user_id)
                             except:
                                 member = None
-                        
-                        if member:
-                            result = json.dumps({
-                                "id": str(member.id),
-                                "name": member.display_name,
-                                "mention": member.mention,
-                                "joined_at": str(member.joined_at) if member.joined_at else None,
-                                "roles": [{"id": str(role.id), "name": role.name} for role in member.roles]
-                            }, ensure_ascii=False)
-                        else:
-                            # 如果找不到成員，嘗試獲取使用者（可能不在公會中）
-                            res_user = bot.get_user(user_id)
-                            if res_user:
+
+                            if member:
                                 result = json.dumps({
-                                    "id": str(res_user.id),
-                                    "name": res_user.name,
-                                    "discriminator": res_user.discriminator,
-                                    "mention": res_user.mention
+                                    "id": str(member.id),
+                                    "name": member.display_name,
+                                    "mention": member.mention,
+                                    "joined_at": str(member.joined_at) if member.joined_at else None,
+                                    "roles": [{"id": str(role.id), "name": role.name} for role in member.roles]
                                 }, ensure_ascii=False)
                             else:
-                                result = json.dumps({"error": "找不到該使用者"})
-                    
-                    else:
-                        result = json.dumps({"error": f"未知工具: {function_name}"})
+                                # 如果找不到成員，嘗試獲取使用者（可能不在公會中）
+                                res_user = bot.get_user(user_id)
+                                if res_user:
+                                    result = json.dumps({
+                                        "id": str(res_user.id),
+                                        "name": res_user.name,
+                                        "discriminator": res_user.discriminator,
+                                        "mention": res_user.mention
+                                    }, ensure_ascii=False)
+                                else:
+                                    result = json.dumps({"error": "找不到該使用者"})
 
-                    # 將工具回應添加到訊息中
-                    messages.append({
-                        "role": "assistant",
-                        "content": None,
-                        "tool_calls": [
-                            {
-                                "id": tool_call.id,
-                                "type": "function",
-                                "function": {
-                                    "name": function_name,
-                                    "arguments": tool_call.function.arguments
+                        else:
+                            result = json.dumps(
+                                {"error": f"未知工具: {function_name}"})
+
+                        # 將工具回應添加到訊息中
+                        messages.append({
+                            "role": "assistant",
+                            "content": None,
+                            "tool_calls": [
+                                {
+                                    "id": tool_call.id,
+                                    "type": "function",
+                                    "function": {
+                                        "name": function_name,
+                                        "arguments": tool_call.function.arguments
+                                    }
                                 }
-                            }
-                        ]
-                    })
-                    messages.append({
-                        "role": "tool",
-                        "content": result,
-                        "tool_call_id": tool_call.id
-                    })
+                            ]
+                        })
+                        messages.append({
+                            "role": "tool",
+                            "content": result,
+                            "tool_call_id": tool_call.id
+                        })
 
                 iteration += 1
 
