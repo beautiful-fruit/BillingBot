@@ -6,6 +6,7 @@ from openai.types.chat import (
     ChatCompletionAssistantMessageParam,
 )
 
+import json
 from os import getenv
 from typing import Optional, TypeAlias, Union
 
@@ -77,24 +78,149 @@ class OpenAIService:
                 user=user
             )
 
-            response = await self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                temperature=0.95
-            )
+            # 定義可用工具
+            tools = [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_channel_members",
+                        "description": "獲取當前頻道的所有使用者列表",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {},
+                            "required": []
+                        }
+                    }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_user_by_id",
+                        "description": "通過使用者ID獲取使用者資料",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "user_id": {
+                                    "type": "string",
+                                    "description": "Discord 使用者 ID"
+                                }
+                            },
+                            "required": ["user_id"]
+                        }
+                    }
+                }
+            ]
 
-            assistant_response = response.choices[0].message.content
-            if assistant_response is None:
-                assistant_response = "抱歉，我無法產生回應。"
+            max_tool_iterations = 3
+            iteration = 0
+            final_response = None
+
+            response = None
+            while iteration < max_tool_iterations:
+                response = await self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    tools=tools,
+                    tool_choice="auto",
+                    temperature=0.95
+                )
+
+                choice = response.choices[0]
+                message_response = choice.message
+                tool_calls = message_response.tool_calls
+
+                # 如果沒有工具調用，則返回回應
+                if not tool_calls:
+                    final_response = message_response.content
+                    if final_response is None:
+                        final_response = "抱歉，我無法產生回應。"
+                    break
+
+                # 處理工具調用
+                for tool_call in tool_calls:
+                    function_name = tool_call.function.name
+                    function_args = json.loads(tool_call.function.arguments)
+                    
+                    if function_name == "get_channel_members":
+                        # 獲取頻道成員
+                        members = channel.members
+                        member_list = []
+                        for member in members:
+                            member_list.append({
+                                "id": str(member.id),
+                                "name": member.display_name,
+                                "mention": member.mention
+                            })
+                        result = json.dumps(member_list, ensure_ascii=False)
+                    
+                    elif function_name == "get_user_by_id":
+                        user_id = int(function_args["user_id"])
+                        # 嘗試從頻道獲取成員，否則從公會獲取
+                        member = channel.guild.get_member(user_id)
+                        if member is None:
+                            try:
+                                member = channel.guild.get_member(user_id)
+                            except:
+                                member = None
+                        
+                        if member:
+                            result = json.dumps({
+                                "id": str(member.id),
+                                "name": member.display_name,
+                                "mention": member.mention,
+                                "joined_at": str(member.joined_at) if member.joined_at else None,
+                                "roles": [{"id": str(role.id), "name": role.name} for role in member.roles]
+                            }, ensure_ascii=False)
+                        else:
+                            # 如果找不到成員，嘗試獲取使用者（可能不在公會中）
+                            res_user = bot.get_user(user_id)
+                            if res_user:
+                                result = json.dumps({
+                                    "id": str(res_user.id),
+                                    "name": res_user.name,
+                                    "discriminator": res_user.discriminator,
+                                    "mention": res_user.mention
+                                }, ensure_ascii=False)
+                            else:
+                                result = json.dumps({"error": "找不到該使用者"})
+                    
+                    else:
+                        result = json.dumps({"error": f"未知工具: {function_name}"})
+
+                    # 將工具回應添加到訊息中
+                    messages.append({
+                        "role": "assistant",
+                        "content": None,
+                        "tool_calls": [
+                            {
+                                "id": tool_call.id,
+                                "type": "function",
+                                "function": {
+                                    "name": function_name,
+                                    "arguments": tool_call.function.arguments
+                                }
+                            }
+                        ]
+                    })
+                    messages.append({
+                        "role": "tool",
+                        "content": result,
+                        "tool_call_id": tool_call.id
+                    })
+
+                iteration += 1
+
+            if final_response is None:
+                final_response = "抱歉，處理工具調用時發生錯誤。"
 
             await ChatRepository.insert(
                 conn=conn,
                 channel_id=channel.id,
                 role="assistant",
-                content=assistant_response,
+                content=final_response,
             )
 
-            total_tokens = response.usage.total_tokens if response.usage else 0
+            total_tokens = response.usage.total_tokens if response and response.usage else 0
             print(f"Total tokens used: {total_tokens}")
             if total_tokens > self.max_tokens:
                 # 清理舊訊息以保持資料庫整潔（刪除前15%的訊息）
@@ -104,7 +230,7 @@ class OpenAIService:
                     percentage=0.15
                 )
 
-            return assistant_response
+            return final_response
 
     async def _build_messages(
         self,
