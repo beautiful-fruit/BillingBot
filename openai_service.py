@@ -66,7 +66,6 @@ class OpenAIService:
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                max_tokens=self.max_tokens,
                 temperature=0.7
             )
 
@@ -84,6 +83,7 @@ class OpenAIService:
             )
 
             total_tokens = response.usage.total_tokens if response.usage else 0
+            print(f"Total tokens used: {total_tokens}")
             if total_tokens > self.max_tokens:
                 # 清理舊訊息以保持資料庫整潔（刪除前15%的訊息）
                 await ChatRepository.delete_old_messages(
