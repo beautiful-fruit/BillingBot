@@ -207,6 +207,7 @@ class OpenAIService:
                                 "id": str(role.id),
                                 "name": role.name,
                                 "color": role.color.value,
+                                "members": [{"id": str(member.id), "name": member.display_name} for member in role.members]
                             }, ensure_ascii=False)
                         else:
                             result = dumps({"error": "找不到該身分組"})
