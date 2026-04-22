@@ -1,8 +1,5 @@
 from discord import Bot, Message
-from typing import Optional
 from openai_service import get_openai_service
-from db import get_db
-from repository.chat_repository import ChatRepository
 
 
 async def handle_chat(bot: Bot, message: Message) -> None:
