@@ -149,6 +149,7 @@ class OpenAIService:
                         if function_name == "get_channel_members":
                             # 獲取頻道成員
                             members = channel.members
+                            print(f"Channel members: {[member.display_name for member in members]}")
                             member_list = []
                             for member in members:
                                 member_list.append({
