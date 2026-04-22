@@ -1,12 +1,9 @@
 from aiohttp import ClientSession
-from discord import ApplicationContext, Embed, EmbedAuthor, EmbedField
+from discord import ApplicationContext
 
 from os import getenv
 
 from bot import bot
-from db import get_db
-from repository.summary_repository import SummaryRepository
-
 
 @bot.slash_command(name="balance", description="Get Deepseek balance")
 async def get_balance(ctx: ApplicationContext):
