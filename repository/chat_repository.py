@@ -44,7 +44,7 @@ class ChatRepository:
             LIMIT $2
         """, channel_id, limit)
 
-        return [
+        return sorted([
             ChatMessage(
                 id=SnowflakeId(row["id"]),
                 channel_id=row["channel_id"],
@@ -53,8 +53,8 @@ class ChatRepository:
                 role=row["role"],
                 content=row["content"],
                 message_id=row["message_id"]
-            ) for row in rows[::-1]  # Reverse to get chronological order
-        ]
+            ) for row in rows
+        ], key=lambda x: x.id.value)
 
     @staticmethod
     async def delete_old_messages(
