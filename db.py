@@ -28,6 +28,11 @@ async def create_tables(conn: Connection) -> None:
         sql_commands = f.read()
         await conn.execute(sql_commands)
 
+    # Create chat tables
+    with open("sql/create_chat_tables.sql", "r", encoding="utf-8") as f:
+        sql_commands = f.read()
+        await conn.execute(sql_commands)
+
 
 @asynccontextmanager
 async def init_db() -> AsyncGenerator[Pool, None]:

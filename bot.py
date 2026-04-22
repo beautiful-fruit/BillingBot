@@ -13,6 +13,7 @@ from interaction.confirm_or_reject import (
     func as confirm_or_reject_func
 )
 from interaction.reply import reply
+from chat import handle_chat
 
 intents = Intents.default()
 intents.message_content = True
@@ -29,6 +30,7 @@ async def on_ready():
 async def on_message(message: Message):
     await fun(bot, message)
     await reply(bot, message)
+    await handle_chat(bot, message)
 
 
 @bot.event
