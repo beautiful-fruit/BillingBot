@@ -56,6 +56,23 @@ TOOLS: list[ChatCompletionToolUnionParam] = [
                     "required": ["user_id"]
                 }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_role_by_id",
+            "description": "通過身分組ID獲取身分組資料",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "role_id": {
+                            "type": "string",
+                            "description": "Discord 身分組 ID"
+                        }
+                    },
+                    "required": ["role_id"]
+                }
+        }
     }
 ]
 
@@ -181,10 +198,22 @@ class OpenAIService:
                                 }, ensure_ascii=False)
                             else:
                                 result = dumps({"error": "找不到該使用者"})
+                    elif function_name == "get_role_by_id":
+                        role_id = int(function_args["role_id"])
+                        role = channel.guild.get_role(role_id)
 
+                        if role:
+                            result = dumps({
+                                "id": str(role.id),
+                                "name": role.name,
+                                "color": role.color.value,
+                            }, ensure_ascii=False)
+                        else:
+                            result = dumps({"error": "找不到該身分組"})
                     else:
-                        result = dumps(
-                            {"error": f"未知工具: {function_name}"})
+                        result = dumps({
+                            "error": f"未知工具: {function_name}"
+                        })
 
                     # 將工具回應添加到訊息中
                     messages.append({
