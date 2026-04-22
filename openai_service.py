@@ -76,9 +76,7 @@ class OpenAIService:
             )
 
             messages = await self._build_messages(
-                history=history,
-                message=message,
-                user=user
+                history=history
             )
 
             # 定義可用工具
@@ -274,9 +272,7 @@ class OpenAIService:
 
     async def _build_messages(
         self,
-        history: list[ChatMessage],
-        message: Message,
-        user: Union[Member, User],
+        history: list[ChatMessage]
     ) -> list[AIChatMessage]:
         messages: list[AIChatMessage] = [
             {"role": "system", "content": self.system_prompt}
@@ -294,11 +290,6 @@ class OpenAIService:
                     "role": "assistant",
                     "content": msg.content
                 })
-
-        messages.append({
-            "role": "user",
-            "content": f"[{user.display_name}{user.mention}]: {message.content}",
-        })
 
         # 如果訊息過長，進行精簡
         return messages
