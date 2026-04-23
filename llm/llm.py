@@ -181,7 +181,7 @@ class LLMService():
             tool_calls = response_message.tool_calls
             if not tool_calls:
                 response = response_message.content or response_message.refusal
-                final_response = response or "抱歉，我無法生成回應。"
+                final_response = response or "抱歉，我無法生成回應。(No content or refusal message)"
                 break
 
             tool_results = await self._call_tools(
@@ -196,7 +196,7 @@ class LLMService():
             messages.extend(tool_results)
 
         if not final_response:
-            final_response = "抱歉，我無法生成回應。"
+            final_response = "抱歉，我無法生成回應。(Exceeded max tool iterations without a final response)"
 
         filtered_response = post_filter(
             channel=channel,
