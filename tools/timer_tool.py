@@ -50,7 +50,7 @@ class TimerTrigger():
                     continue
 
                 await self.system_event_callback(
-                    f"[Timer Triggered][Created by <@{timer.user_id}>]: {timer.message}",
+                    f"[Timer Triggered]: {_timer_to_dict(timer=timer)}",
                     channel,  # type: ignore
                 )
 
