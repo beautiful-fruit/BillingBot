@@ -8,7 +8,6 @@ from openai.types.chat import (
     ChatCompletionUserMessageParam,
     ChatCompletionAssistantMessageParam,
 )
-from pydantic_snowflake import SnowflakeId
 
 from asyncio import get_event_loop
 from json import loads, dumps
@@ -18,6 +17,7 @@ from typing import Optional, TypeAlias, Union
 from db import get_db
 from repository.chat_repository import ChatRepository
 from schemas.chat_message import ChatMessage
+from tools import ToolBase, AVAILABLE_TOOLS
 
 AIChatMessage: TypeAlias = Union[
     ChatCompletionToolMessageParam,
@@ -27,54 +27,7 @@ AIChatMessage: TypeAlias = Union[
 ]
 
 # 定義可用工具
-TOOLS: list[ChatCompletionToolUnionParam] = [
-    {
-        "type": "function",
-        "function": {
-            "name": "get_channel_members",
-            "description": "獲取當前頻道的所有使用者列表",
-                "parameters": {
-                    "type": "object",
-                    "properties": {},
-                    "required": []
-                }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "get_user_by_id",
-            "description": "通過使用者ID獲取使用者資料",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "user_id": {
-                            "type": "string",
-                            "description": "Discord 使用者 ID"
-                        }
-                    },
-                    "required": ["user_id"]
-                }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "get_role_by_id",
-            "description": "通過身分組ID獲取身分組資料",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "role_id": {
-                            "type": "string",
-                            "description": "Discord 身分組 ID"
-                        }
-                    },
-                    "required": ["role_id"]
-                }
-        }
-    }
-]
+TOOLS: list[type[ToolBase]] = AVAILABLE_TOOLS
 
 
 class OpenAIService:
@@ -119,7 +72,6 @@ class OpenAIService:
                 username=user.display_name,
                 message_id=message.id
             )
-
             history = await ChatRepository.get_channel_history(
                 conn=conn,
                 channel_id=channel.id,
@@ -132,11 +84,14 @@ class OpenAIService:
         final_response = None
 
         response = None
+        tool_params = []
+        for tool in TOOLS:
+            tool_params.extend(tool.get_registered_tools())
         while iteration < max_tool_iterations:
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                tools=TOOLS,
+                tools=tool_params,
                 tool_choice="auto",
                 temperature=0.95
             )
@@ -156,62 +111,24 @@ class OpenAIService:
             for tool_call in tool_calls:
                 if isinstance(tool_call, ChatCompletionMessageFunctionToolCall):
                     function_name = tool_call.function.name
-                    function_args = loads(
-                        tool_call.function.arguments)
 
-                    if function_name == "get_channel_members":
-                        # 獲取頻道成員
-                        members = channel.members
-                        print(
-                            f"Channel members: {[member.display_name for member in members]}")
-                        member_list = []
-                        for member in members:
-                            member_list.append({
-                                "id": str(member.id),
-                                "name": member.display_name,
-                            })
-                        result = dumps(
-                            member_list, ensure_ascii=False)
-                    elif function_name == "get_user_by_id":
-                        user_id = int(function_args["user_id"])
-                        # 嘗試從頻道獲取成員，否則從公會獲取
+                    result: Optional[str] = None
+                    for tool in TOOLS:
                         try:
-                            member = channel.guild.get_member(user_id)
-                        except:
-                            member = None
-
-                        if member:
+                            result = await tool.call_tool(
+                                tool_call=tool_call,
+                                bot=bot,
+                                message=message,
+                            )
+                        except Exception as e:
                             result = dumps({
-                                "id": str(member.id),
-                                "name": member.display_name,
-                                "joined_at": str(member.joined_at) if member.joined_at else None,
-                                "roles": [{"id": str(role.id), "name": role.name} for role in member.roles]
-                            }, ensure_ascii=False)
-                        else:
-                            # 如果找不到成員，嘗試獲取使用者（可能不在公會中）
-                            res_user = bot.get_user(user_id)
-                            if res_user:
-                                result = dumps({
-                                    "id": str(res_user.id),
-                                    "name": res_user.name,
-                                    "discriminator": res_user.discriminator,
-                                }, ensure_ascii=False)
-                            else:
-                                result = dumps({"error": "找不到該使用者"})
-                    elif function_name == "get_role_by_id":
-                        role_id = int(function_args["role_id"])
-                        role = channel.guild.get_role(role_id)
+                                "error": f"工具 {function_name} 執行時發生錯誤: {str(e)}"
+                            })
 
-                        if role:
-                            result = dumps({
-                                "id": str(role.id),
-                                "name": role.name,
-                                "color": role.color.value,
-                                "members": [{"id": str(member.id), "name": member.display_name} for member in role.members]
-                            }, ensure_ascii=False)
-                        else:
-                            result = dumps({"error": "找不到該身分組"})
-                    else:
+                        if result is not None:
+                            break
+
+                    if result is None:
                         result = dumps({
                             "error": f"未知工具: {function_name}"
                         })
