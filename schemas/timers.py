@@ -12,6 +12,7 @@ class TimerData(BaseModel):
     user_id: int
     trigger_time: datetime
     message: str
+    original_message: str
 
     @property
     def insert_query(self) -> tuple[str, tuple]:

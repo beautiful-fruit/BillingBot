@@ -1,5 +1,5 @@
 from asyncio import gather, get_running_loop, sleep as asleep, Task
-from discord import Bot, TextChannel
+from discord import Bot, Message, TextChannel
 
 from datetime import datetime, timedelta
 try:
@@ -85,9 +85,9 @@ class TimerTools(ToolBase):
 例如，你設置了一個計時器，message 參數為「提醒 <@user_id> 喝水」，當計時器觸發時，你會收到這個文本內容，讓你知道該做什麼。
 當計時器觸發時，會由伺服器主動發一條消息給你，內容為「[Timer Triggered][Created by <@user_id>]: 提醒 <@user_id> 喝水」。
 記住，message 的文本不是給使用者看的，而是給你的，當計時器觸發時，你會收到這個文本內容，讓你知道該做什麼。
+當你收到由 system role 發出的 [Timer Triggered][Created by <@user_id>] 消息時，這意味著計時器已經觸發，你應該根據 message 參數的內容來執行相應的操作，而不是重新創建一個新的計時器，除非使用者再次要求你在未來的某個時間點提醒他們。
 此外，trigger_time 參數是預計觸發的時間，例如使用者要你在 10 分鐘後提醒他們，你需要將當前時間加上 10 分鐘，然後將結果作為 trigger_time 參數的值。
-**不要在 trigger_time 放入現在的時間**
-你可以透過 calculate_timestamp 工具來計算 trigger_time 的值，這個工具會接受從現在起的秒數、分鐘數、小時數和天數，然後返回一個 Unix Timestamp，這個 Timestamp 就可以用作 trigger_time 的值。
+**不要在 trigger_time 放入現在的時間**，你可以透過 calculate_timestamp 工具來計算 trigger_time 的值，這個工具會接受從現在起的秒數、分鐘數、小時數和天數，然後返回一個 Unix Timestamp，這個 Timestamp 就可以用作 trigger_time 的值。
 """
 
     @classmethod
@@ -111,9 +111,13 @@ _timer_trigger: Optional[TimerTrigger] = None
 def _timer_to_dict(timer: TimerData) -> dict:
     return {
         "id": str(timer.id),
-        "user_id": str(timer.user_id),
         "trigger_time": timer.trigger_time.astimezone().isoformat(),
         "message": timer.message,
+        "original_message": {
+            "author_id": str(timer.user_id),
+            "content": timer.original_message,
+            "created_at": timer.id.datetime.astimezone().isoformat(),
+        }
     }
 
 
@@ -164,7 +168,11 @@ async def add_timer(
     user_id: Annotated[str, "Discord 使用者 ID"],
     trigger_time: Annotated[int, "觸發時間，Unix Timestamp"],
     message: Annotated[str, "計時器訊息內容"],
+    origin_message: Optional[Message] = None,
 ) -> dict:
+    if origin_message is None:
+        return {"error": "Origin message is required to create a timer."}
+
     try:
         async with get_db() as conn:
             timer = await TimerRepository.insert(
@@ -172,7 +180,8 @@ async def add_timer(
                 channel_id=channel.id,
                 user_id=int(user_id),
                 trigger_time=trigger_time,
-                message=message
+                message=message,
+                origin_message=origin_message.content,
             )
     except ValueError:
         return {"error": "Invalid trigger_time. Please provide a valid Unix timestamp."}

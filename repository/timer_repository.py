@@ -19,12 +19,14 @@ class TimerRepository:
         user_id: int,
         trigger_time: int,
         message: str,
+        origin_message: str,
     ) -> TimerData:
         data = TimerData(
             channel_id=channel_id,
             user_id=user_id,
             trigger_time=datetime.fromtimestamp(trigger_time, UTC),
             message=message,
+            original_message=origin_message,
         )
 
         cmd, params = data.insert_query
@@ -35,7 +37,7 @@ class TimerRepository:
     @staticmethod
     async def get_all_timers(conn: Connection) -> list[TimerData]:
         rows = await conn.fetch("""
-            SELECT id, channel_id, user_id, trigger_time, message
+            SELECT id, channel_id, user_id, trigger_time, message, original_message
             FROM timers
             ORDER BY trigger_time ASC
         """)
@@ -47,6 +49,7 @@ class TimerRepository:
                 user_id=row["user_id"],
                 trigger_time=row["trigger_time"],
                 message=row["message"],
+                original_message=row["message"],
             ) for row in rows
         ]
 
@@ -57,7 +60,7 @@ class TimerRepository:
         user_id: Optional[int] = None,
     ) -> list[TimerData]:
         rows = await conn.fetch("""
-            SELECT id, channel_id, user_id, trigger_time, message
+            SELECT id, channel_id, user_id, trigger_time, message, original_message
             FROM timers
             WHERE channel_id = $1 AND ($2::bigint IS NULL OR user_id = $2)
             ORDER BY trigger_time ASC
@@ -70,6 +73,7 @@ class TimerRepository:
                 user_id=row["user_id"],
                 trigger_time=row["trigger_time"],
                 message=row["message"],
+                original_message=row["original_message"],
             ) for row in rows
         ]
 
@@ -80,7 +84,7 @@ class TimerRepository:
         timer_id: int,
     ) -> Optional[TimerData]:
         row = await conn.fetchrow("""
-            SELECT id, channel_id, user_id, trigger_time, message
+            SELECT id, channel_id, user_id, trigger_time, message, original_message
             FROM timers
             WHERE id = $1 AND channel_id = $2
         """, timer_id, channel_id)
@@ -94,6 +98,7 @@ class TimerRepository:
             user_id=row["user_id"],
             trigger_time=row["trigger_time"],
             message=row["message"],
+            original_message=row["original_message"],
         )
 
     @staticmethod

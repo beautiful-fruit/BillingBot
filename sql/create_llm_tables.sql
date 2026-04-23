@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS timers (
     channel_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
     trigger_time TIMESTAMPTZ NOT NULL,
-    message TEXT NOT NULL
+    message TEXT NOT NULL,
+    original_message TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_timers_user_id 
