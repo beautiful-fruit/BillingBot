@@ -1,4 +1,5 @@
 from asyncpg import Connection
+from pydantic_snowflake import SnowflakeId
 
 from datetime import datetime
 try:
@@ -44,7 +45,7 @@ class TimerRepository:
 
         return [
             TimerData(
-                id=row["id"],
+                id=SnowflakeId(row["id"]),
                 channel_id=row["channel_id"],
                 user_id=row["user_id"],
                 trigger_time=row["trigger_time"],
@@ -68,7 +69,7 @@ class TimerRepository:
 
         return [
             TimerData(
-                id=row["id"],
+                id=SnowflakeId(row["id"]),
                 channel_id=row["channel_id"],
                 user_id=row["user_id"],
                 trigger_time=row["trigger_time"],
@@ -93,7 +94,7 @@ class TimerRepository:
             return None
 
         return TimerData(
-            id=row["id"],
+            id=SnowflakeId(row["id"]),
             channel_id=row["channel_id"],
             user_id=row["user_id"],
             trigger_time=row["trigger_time"],
