@@ -49,7 +49,7 @@ class TimerRepository:
                 user_id=row["user_id"],
                 trigger_time=row["trigger_time"],
                 message=row["message"],
-                original_message=row["message"],
+                original_message=row["original_message"],
             ) for row in rows
         ]
 

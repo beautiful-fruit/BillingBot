@@ -19,7 +19,7 @@ from .base import ToolBase
 
 
 def _timer_to_dict(timer: TimerData) -> dict:
-    print("Converting TimerData to dict:", timer)
+    print("Converting TimerData to dict:", timer, type(timer.id))
     return {
         "id": str(timer.id),
         "trigger_time": timer.trigger_time.astimezone().isoformat(),
