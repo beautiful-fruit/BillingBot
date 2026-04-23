@@ -97,7 +97,7 @@ class ToolData(Generic[U]):
 
     @property
     def function_name(self) -> str:
-        return f"{self._class_name}.{self._func.__name__}"
+        return f"{self._class_name}-{self._func.__name__}"
 
     def call(
         self,
