@@ -246,6 +246,7 @@ class LLMService():
         event: str,
         text_channel: TextChannel,
     ) -> None:
+        print(f"System Event: {event} (Channel: {text_channel.name})")
         async with get_db() as conn:
             await ChatRepository.insert(
                 conn=conn,
