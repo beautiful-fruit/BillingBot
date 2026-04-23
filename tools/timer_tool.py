@@ -77,6 +77,15 @@ class TimerTrigger():
 
 class TimerTools(ToolBase):
     class_name = "timer"
+    description = """
+提供計時器相關功能，包括查看、添加、更新和刪除計時器。當計時器觸發時，會在對應的頻道發送一條消息，內容為計時器訊息和創建者的資訊。
+如果使用者要求你在一段時間後提醒他們某件事，你可以使用這個工具來創建一個計時器。
+例如，如果使用者說「請在 10 分鐘後提醒我喝水」，你可以使用這個工具來創建一個計時器。
+其中的 message 參數可以包含任何文本內容，使用者不會看到這些內容，這個文本是提供給你的，當計時器觸發時，你會收到這個文本內容，讓你知道該做什麼。
+例如，你設置了一個計時器，message 參數為「提醒 <@user_id> 喝水」，當計時器觸發時，你會收到這個文本內容，讓你知道該做什麼。
+當計時器觸發時，會由伺服器主動發一條消息給你，內容為「[Timer Triggered][Created by <@user_id>]: 提醒 <@user_id> 喝水」。
+記住，message 的文本不是給使用者看的，而是給你的，當計時器觸發時，你會收到這個文本內容，讓你知道該做什麼。
+"""
 
     @classmethod
     async def setup(cls, bot: Bot, system_event_callback: Callable[[str, TextChannel], Awaitable[None]]) -> None:

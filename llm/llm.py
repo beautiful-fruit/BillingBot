@@ -70,6 +70,14 @@ class LLMService():
             {"role": "system", "content": f"Current time: {datetime.now().isoformat()}"},
         ]
 
+        for tool_cls in AVAILABLE_TOOLS:
+            if not tool_cls.description:
+                continue
+            messages.append({
+                "role": "system",
+                "content": f"[Tool Description][{tool_cls.class_name}]: {tool_cls.description}"
+            })
+
         for msg in db_messages:
             if msg.role == "user":
                 timestamp = msg.id.datetime.astimezone().isoformat()
