@@ -55,7 +55,7 @@ class TimerTrigger():
 
             removed_timers: list[TimerData] = []
             const_timers = [timer for timer in self._timers]
-            print(const_timers)
+            print(const_timers, self._timers)
             for timer in const_timers:
                 print(f"Checking Timer: {timer.id} (Trigger Time: {timer.trigger_time.astimezone(UTC).isoformat()}, Current Time: {current_time.astimezone(UTC).isoformat()})")
                 if timer.trigger_time.astimezone(UTC) > current_time:
