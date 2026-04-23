@@ -17,7 +17,7 @@ class OpenAIConfig():
     model: str
     max_history_messages: int = 1000
     max_tokens: int = 10_000
-    max_tool_iterations: int = 3
+    max_tool_iterations: int = 5
     response_mode: str
 
     def __init__(self):

@@ -1,7 +1,7 @@
 from asyncio import gather, get_running_loop, sleep as asleep, Task
 from discord import Bot, TextChannel
 
-from datetime import datetime
+from datetime import datetime, timedelta
 try:
     from datetime import UTC
 except ImportError:
@@ -86,7 +86,8 @@ class TimerTools(ToolBase):
 當計時器觸發時，會由伺服器主動發一條消息給你，內容為「[Timer Triggered][Created by <@user_id>]: 提醒 <@user_id> 喝水」。
 記住，message 的文本不是給使用者看的，而是給你的，當計時器觸發時，你會收到這個文本內容，讓你知道該做什麼。
 此外，trigger_time 參數是預計觸發的時間，例如使用者要你在 10 分鐘後提醒他們，你需要將當前時間加上 10 分鐘，然後將結果作為 trigger_time 參數的值。
-你需要將 trigger_time 轉換為 Unix Timestamp 格式，這是一個整數，表示從 1970 年 1 月 1 日 00:00:00 UTC 到預計觸發時間的秒數。
+**不要在 trigger_time 放入現在的時間**
+你可以透過 calculate_timestamp 工具來計算 trigger_time 的值，這個工具會接受從現在起的秒數、分鐘數、小時數和天數，然後返回一個 Unix Timestamp，這個 Timestamp 就可以用作 trigger_time 的值。
 """
 
     @classmethod
@@ -133,6 +134,28 @@ async def view_timers(
         _timer_to_dict(timer)
         for timer in timers
     ]
+
+
+@TimerTools.register(description="計算時間戳")
+async def calculate_timestamp(
+    seconds: Annotated[int, "從現在起的秒數"] = 0,
+    minutes: Annotated[int, "從現在起的分鐘數"] = 0,
+    hours: Annotated[int, "從現在起的小時數"] = 0,
+    days: Annotated[int, "從現在起的天數"] = 0,
+) -> dict:
+    now = datetime.now(UTC)
+    delta = timedelta(
+        seconds=seconds,
+        minutes=minutes,
+        hours=hours,
+        days=days,
+    )
+    target_time = now + delta
+
+    return {
+        "timestamp": int(target_time.timestamp()),
+        "iso_time": target_time.astimezone().isoformat(),
+    }
 
 
 @TimerTools.register(description="新增一個計時器")
