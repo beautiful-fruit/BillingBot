@@ -50,6 +50,7 @@ class TimerTrigger():
                     removed_timers.append(timer)
                     continue
 
+                print(f"Timer Triggered: {timer.id} (Channel: {channel}, Message: {timer.message})")
                 await self.system_event_callback(
                     f"[Timer Triggered]: {dumps(_timer_to_dict(timer=timer)).decode('utf-8')}",
                     channel,  # type: ignore
@@ -65,7 +66,8 @@ class TimerTrigger():
                     TimerRepository.delete_timer_by_id(
                         conn=conn,
                         channel_id=timer.channel_id,
-                        timer_id=int(timer.id))
+                        timer_id=int(timer.id)
+                    )
                     for timer in removed_timers
                 ])
 
