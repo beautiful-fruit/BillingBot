@@ -234,9 +234,10 @@ class OpenAIService:
         # 添加歷史訊息（排除系統訊息）
         for msg in history:
             if msg.role == "user":
+                safe_content = msg.content.replace("<", "＜").replace(">", "＞")
                 messages.append({
                     "role": "user",
-                    "content": f"[{msg.id.datetime.isoformat()} {msg.username}<@{msg.user_id}>]: {msg.content}",
+                    "content": f"[{msg.id.datetime.isoformat()} {msg.username}<@{msg.user_id}>]: <user_input>{safe_content}</user_input>",
                 })
             elif msg.role == "assistant":
                 messages.append({
