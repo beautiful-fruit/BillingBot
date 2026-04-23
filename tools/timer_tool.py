@@ -49,6 +49,7 @@ class TimerTrigger():
         self._timers = db_timers
 
     async def _check_timers(self) -> None:
+        await self.refresh()
         while True:
             current_time = datetime.now(UTC)
 
