@@ -85,6 +85,8 @@ class TimerTools(ToolBase):
 例如，你設置了一個計時器，message 參數為「提醒 <@user_id> 喝水」，當計時器觸發時，你會收到這個文本內容，讓你知道該做什麼。
 當計時器觸發時，會由伺服器主動發一條消息給你，內容為「[Timer Triggered][Created by <@user_id>]: 提醒 <@user_id> 喝水」。
 記住，message 的文本不是給使用者看的，而是給你的，當計時器觸發時，你會收到這個文本內容，讓你知道該做什麼。
+此外，trigger_time 參數是預計觸發的時間，例如使用者要你在 10 分鐘後提醒他們，你需要將當前時間加上 10 分鐘，然後將結果作為 trigger_time 參數的值。
+你需要將 trigger_time 轉換為 Unix Timestamp 格式，這是一個整數，表示從 1970 年 1 月 1 日 00:00:00 UTC 到預計觸發時間的秒數。
 """
 
     @classmethod
