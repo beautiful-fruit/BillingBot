@@ -42,6 +42,7 @@ class TimerTrigger():
             removed_timers: list[TimerData] = []
             const_timers = self._timers.copy()
             for timer in const_timers:
+                print(f"Checking Timer: {timer.id} (Trigger Time: {timer.trigger_time.astimezone(UTC).isoformat()}, Current Time: {current_time.astimezone(UTC).isoformat()})")
                 if timer.trigger_time.astimezone(UTC) > current_time:
                     continue
 
@@ -50,9 +51,10 @@ class TimerTrigger():
                     removed_timers.append(timer)
                     continue
 
-                print(f"Timer Triggered: {timer.id} (Channel: {channel}, Message: {timer.message})")
+                message = dumps(_timer_to_dict(timer=timer)).decode('utf-8')
+                print(f"Timer Triggered: {timer.id} (Channel: {channel}, Message: {message})")
                 await self.system_event_callback(
-                    f"[Timer Triggered]: {dumps(_timer_to_dict(timer=timer)).decode('utf-8')}",
+                    f"[Timer Triggered]: {message}",
                     channel,  # type: ignore
                 )
 
