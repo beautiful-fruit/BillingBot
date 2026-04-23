@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
 from pydantic_snowflake import SnowflakeId, SnowflakeGenerator
-from datetime import datetime
 from typing import Optional, Literal, TypeAlias
 
 

@@ -7,6 +7,7 @@ from openai.types.chat import (
     ChatCompletionMessageFunctionToolCall
 )
 
+from asyncio import gather
 from datetime import datetime
 from typing import Optional
 
@@ -15,17 +16,20 @@ from repository.chat_repository import ChatRepository
 from tools import AVAILABLE_TOOLS
 
 from .config import OpenAIConfig
+from .filter import post_filter
 from .prompt_store import PromptStore
 from .types import PossibleMessageType
 
 
 class LLMService():
+    bot: Bot
     client: AsyncOpenAI
     config: OpenAIConfig
     prompts: PromptStore
     tools: list[ChatCompletionToolUnionParam]
 
-    def __init__(self) -> None:
+    def __init__(self, bot: Bot) -> None:
+        self.bot = bot
         self.config = OpenAIConfig()
         self.prompts = PromptStore()
 
@@ -33,6 +37,13 @@ class LLMService():
             api_key=self.config.api_key,
             base_url=self.config.base_url
         )
+        self.tools = []
+
+    async def setup(self) -> None:
+        await gather(*[
+            tool_cls.setup(self.bot, self.system_event_callback)
+            for tool_cls in AVAILABLE_TOOLS
+        ])
 
         self.tools = []
         for tool_cls in AVAILABLE_TOOLS:
@@ -41,7 +52,6 @@ class LLMService():
     async def _build_messages(
         self,
         conn: Connection,
-        bot: Bot,
         channel: TextChannel,
     ) -> list[PossibleMessageType]:
         db_messages = await ChatRepository.get_channel_history(
@@ -50,7 +60,7 @@ class LLMService():
             limit=self.config.max_history_messages * 2
         )
 
-        bot_id = bot.user.id if bot.user else None
+        bot_id = self.bot.user.id if self.bot.user else None
         display_name = channel.guild.me.display_name
 
         system_prompt = self.prompts.get_system_prompt(
@@ -94,8 +104,8 @@ class LLMService():
     async def _call_tools(
         self,
         tool_calls: list[ChatCompletionMessageFunctionToolCall],
-        bot: Bot,
-        message: Message,
+        channel: TextChannel,
+        message: Optional[Message] = None,
     ) -> list[PossibleMessageType]:
         results: list[PossibleMessageType] = []
 
@@ -107,7 +117,7 @@ class LLMService():
                 try:
                     exec_result = await tool_cls.call_tool(
                         tool_call=tool_call,
-                        bot=bot,
+                        channel=channel,
                         message=message,
                     )
                 except Exception as e:
@@ -146,13 +156,11 @@ class LLMService():
     async def _process_message(
         self,
         conn: Connection,
-        bot: Bot,
-        message: Message,
         channel: TextChannel,
+        message: Optional[Message] = None,
     ) -> tuple[str, ChatCompletionMessage]:
         messages = await self._build_messages(
             conn=conn,
-            bot=bot,
             channel=channel,
         )
 
@@ -173,7 +181,7 @@ class LLMService():
                     tool_call for tool_call in tool_calls
                     if isinstance(tool_call, ChatCompletionMessageFunctionToolCall)
                 ],
-                bot=bot,
+                channel=channel,
                 message=message,
             )
 
@@ -182,14 +190,18 @@ class LLMService():
         if not final_response:
             final_response = "抱歉，我無法生成回應。"
 
-        return final_response, response_message  # type: ignore
+        filtered_response = post_filter(
+            channel=channel,
+            message=final_response,
+        )
+
+        return filtered_response, response_message  # type: ignore
 
     async def process_message(
         self,
-        bot: Bot,
         message: Message,
     ) -> str:
-        text_channel = message.channel
+        text_channel = message.channel if message else None
         if not isinstance(text_channel, TextChannel):
             return "抱歉，我只能在文字頻道中回應。"
 
@@ -208,7 +220,6 @@ class LLMService():
 
             response, raw_message = await self._process_message(
                 conn=conn,
-                bot=bot,
                 message=message,
                 channel=text_channel,
             )
@@ -222,13 +233,49 @@ class LLMService():
 
         return response
 
+    async def system_event_callback(
+        self,
+        event: str,
+        text_channel: TextChannel,
+    ) -> None:
+        async with get_db() as conn:
+            await ChatRepository.insert(
+                conn=conn,
+                channel_id=text_channel.id,
+                role="system",
+                content=event,
+            )
+
+            response, raw_message = await self._process_message(
+                conn=conn,
+                channel=text_channel,
+            )
+
+            await ChatRepository.insert(
+                conn=conn,
+                channel_id=text_channel.id,
+                role="assistant",
+                content=response,
+            )
+
+        await text_channel.send(response)
+
 
 _service_instance: Optional[LLMService] = None
 
 
-def get_llm_service() -> LLMService:
+async def setup_llm_service(bot: Bot) -> None:
     global _service_instance
+    if _service_instance is not None:
+        return
+
+    _service_instance = LLMService(bot=bot)
+    await _service_instance.setup()
+
+
+def get_llm_service() -> LLMService:
     if _service_instance is None:
-        _service_instance = LLMService()
+        raise RuntimeError(
+            "LLMService has not been initialized. Please call setup_llm_service(bot) first.")
 
     return _service_instance

@@ -29,7 +29,7 @@ async def create_tables(conn: Connection) -> None:
         await conn.execute(sql_commands)
 
     # Create chat tables
-    with open("sql/create_chat_tables.sql", "r", encoding="utf-8") as f:
+    with open("sql/create_llm_tables.sql", "r", encoding="utf-8") as f:
         sql_commands = f.read()
         await conn.execute(sql_commands)
 

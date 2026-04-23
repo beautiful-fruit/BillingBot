@@ -13,7 +13,8 @@ from interaction.confirm_or_reject import (
     func as confirm_or_reject_func
 )
 from interaction.reply import reply
-from chat import handle_chat
+from interaction.chat import handle_chat
+from llm.llm import setup_llm_service
 
 intents = Intents.default()
 intents.message_content = True
@@ -24,6 +25,7 @@ bot = Bot(intents=intents)
 
 @bot.event
 async def on_ready():
+    await setup_llm_service(bot)
     print(f"Logged in as {bot.user}")
 
 

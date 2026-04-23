@@ -6,6 +6,7 @@ from inspect import isawaitable, signature
 from typing import (
     Annotated,
     Any,
+    Awaitable,
     Callable,
     ClassVar,
     Generic,
@@ -13,13 +14,16 @@ from typing import (
     get_origin,
     Literal,
     Optional,
+    TypeAlias,
     TypeVar,
     Union,
 )
-from types import UnionType
+from types import NoneType, UnionType
 
 T = TypeVar("T", bound="Callable")
 U = TypeVar("U")
+
+SystemEventCallback: TypeAlias = Callable[[str, TextChannel], Awaitable[None]]
 
 
 class ToolData(Generic[U]):
@@ -64,11 +68,11 @@ class ToolData(Generic[U]):
                 type_set = {param_type}
             if type_set.issuperset({Bot}):
                 self._depends[name] = "bot"
-            elif type_set.issuperset({Message}):
+            elif type_set.issuperset({Message, NoneType}):
                 self._depends[name] = "message"
             elif type_set.issuperset({TextChannel}):
                 self._depends[name] = "text_channel"
-            elif type_set.issuperset({User, Member}):
+            elif type_set.issuperset({User, Member, NoneType}):
                 self._depends[name] = "user_or_member"
 
             if name in self._depends:
@@ -103,7 +107,8 @@ class ToolData(Generic[U]):
         self,
         tool_call: ChatCompletionMessageToolCall,
         bot: Bot,
-        message: Message
+        channel: TextChannel,
+        message: Optional[Message] = None
     ) -> U:
         function_args: dict[str, Any] = loads(tool_call.function.arguments)
         if not isinstance(function_args, dict):
@@ -115,12 +120,12 @@ class ToolData(Generic[U]):
             elif dep == "message":
                 function_args[param_name] = message
             elif dep == "text_channel":
-                if isinstance(message.channel, TextChannel):
-                    function_args[param_name] = message.channel
+                if isinstance(channel, TextChannel):
+                    function_args[param_name] = channel
                 else:
                     raise ValueError("Current channel is not a text channel")
             elif dep == "user_or_member":
-                function_args[param_name] = message.author
+                function_args[param_name] = message.author if message else None
 
         return self._func(**function_args)
 
@@ -152,6 +157,17 @@ class ToolData(Generic[U]):
 class ToolBase():
     class_name: ClassVar[Optional[str]] = None
     _registered_tools: ClassVar[dict[str, ToolData]] = {}
+    _bot: ClassVar[Optional[Bot]] = None
+    _system_event_callback: ClassVar[Optional[SystemEventCallback]] = None
+
+    @classmethod
+    async def setup(
+        cls,
+        bot: Bot,
+        system_event_callback: SystemEventCallback
+    ) -> None:
+        cls._bot = bot
+        cls._system_event_callback = system_event_callback
 
     @classmethod
     def register(cls, description: str) -> Callable[[T], T]:
@@ -177,15 +193,20 @@ class ToolBase():
     async def call_tool(
         cls,
         tool_call: ChatCompletionMessageToolCall,
-        bot: Bot,
-        message: Message
+        channel: TextChannel,
+        message: Optional[Message] = None,
     ) -> Optional[str]:
         function_name = tool_call.function.name
         tool = cls._registered_tools.get(function_name)
-        if not tool:
+        if not tool or cls._bot is None:
             return None
 
-        result = tool.call(tool_call, bot, message)
+        result = tool.call(
+            tool_call,
+            bot=cls._bot,
+            channel=channel,
+            message=message
+        )
         if isawaitable(result):
             result = await result
 

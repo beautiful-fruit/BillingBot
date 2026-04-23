@@ -9,7 +9,7 @@ class DiscordTools(ToolBase):
     class_name = "discord"
 
 
-def user_to_dict(user: Union[User, Member]) -> dict:
+def _user_to_dict(user: Union[User, Member]) -> dict:
     return {
         "id": str(user.id),
         "username": user.name,
@@ -18,7 +18,7 @@ def user_to_dict(user: Union[User, Member]) -> dict:
     }
 
 
-def role_to_dict(role: Role) -> dict:
+def _role_to_dict(role: Role) -> dict:
     return {
         "id": str(role.id),
         "name": role.name,
@@ -52,9 +52,9 @@ async def get_user_by_id(
         return {}
 
     return {
-        **user_to_dict(member),
+        **_user_to_dict(member),
         "roles": [
-            role_to_dict(role)
+            _role_to_dict(role)
             for role in member.roles
         ]
     }
@@ -70,9 +70,9 @@ async def get_role_by_id(
         return {}
 
     return {
-        **role_to_dict(role),
+        **_role_to_dict(role),
         "members": [
-            user_to_dict(member)
+            _user_to_dict(member)
             for member in role.members
         ]
     }

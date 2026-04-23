@@ -67,16 +67,16 @@ class ChatRepository:
             SELECT COUNT(*) FROM chat_messages
             WHERE channel_id = $1
         """, channel_id)
-        
+
         if count_result is None or count_result <= 10:  # 如果訊息少於10條，不刪除
             return
-        
+
         # 計算要刪除的數量（前15%）
         delete_count = int(count_result * percentage)
-        
+
         if delete_count < 1:  # 如果計算結果小於1，至少刪除1條
             delete_count = 1
-        
+
         # 刪除最舊的訊息
         await conn.execute("""
             DELETE FROM chat_messages
