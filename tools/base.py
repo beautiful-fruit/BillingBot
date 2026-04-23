@@ -155,10 +155,19 @@ class ToolData(Generic[U]):
 
 
 class ToolBase():
-    class_name: ClassVar[Optional[str]] = None
-    _registered_tools: ClassVar[dict[str, ToolData]] = {}
-    _bot: ClassVar[Optional[Bot]] = None
-    _system_event_callback: ClassVar[Optional[SystemEventCallback]] = None
+    class_name: ClassVar[str]
+    _registered_tools: ClassVar[dict[str, ToolData]]
+    _bot: ClassVar[Optional[Bot]]
+    _system_event_callback: ClassVar[Optional[SystemEventCallback]]
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if cls.class_name is None:
+            cls.class_name = cls.__name__
+
+        cls._registered_tools = {}
+        cls._bot = None
+        cls._system_event_callback = None
 
     @classmethod
     async def setup(
