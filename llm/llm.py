@@ -86,7 +86,10 @@ class LLMService():
                     "content": msg.content
                 })  # type: ignore
 
-        if not in_system_event:
+        if in_system_event:
+            while messages and messages[-1]["role"] != "user":
+                messages.pop()
+        else:
             messages.append({"role": "system", "content": system_prompt})
 
         return messages
