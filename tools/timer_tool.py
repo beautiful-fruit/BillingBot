@@ -1,5 +1,6 @@
 from asyncio import gather, get_running_loop, sleep as asleep, Task
 from discord import Bot, Message, TextChannel
+from orjson import dumps
 
 from datetime import datetime, timedelta
 try:
@@ -50,7 +51,7 @@ class TimerTrigger():
                     continue
 
                 await self.system_event_callback(
-                    f"[Timer Triggered]: {_timer_to_dict(timer=timer)}",
+                    f"[Timer Triggered]: {dumps(_timer_to_dict(timer=timer)).decode('utf-8')}",
                     channel,  # type: ignore
                 )
 
