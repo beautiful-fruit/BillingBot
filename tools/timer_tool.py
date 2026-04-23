@@ -18,6 +18,19 @@ from tools.base import SystemEventCallback
 from .base import ToolBase
 
 
+def _timer_to_dict(timer: TimerData) -> dict:
+    return {
+        "id": str(timer.id),
+        "trigger_time": timer.trigger_time.astimezone().isoformat(),
+        "message": timer.message,
+        "original_message": {
+            "author_id": str(timer.user_id),
+            "content": timer.original_message,
+            "created_at": timer.id.datetime.astimezone().isoformat(),
+        }
+    }
+
+
 class TimerTrigger():
     system_event_callback: SystemEventCallback
     _bot: Bot
@@ -42,7 +55,8 @@ class TimerTrigger():
             removed_timers: list[TimerData] = []
             const_timers = self._timers.copy()
             for timer in const_timers:
-                print(f"Checking Timer: {timer.id} (Trigger Time: {timer.trigger_time.astimezone(UTC).isoformat()}, Current Time: {current_time.astimezone(UTC).isoformat()})")
+                print(
+                    f"Checking Timer: {timer.id} (Trigger Time: {timer.trigger_time.astimezone(UTC).isoformat()}, Current Time: {current_time.astimezone(UTC).isoformat()})")
                 if timer.trigger_time.astimezone(UTC) > current_time:
                     continue
 
@@ -52,7 +66,8 @@ class TimerTrigger():
                     continue
 
                 message = dumps(_timer_to_dict(timer=timer)).decode('utf-8')
-                print(f"Timer Triggered: {timer.id} (Channel: {channel}, Message: {message})")
+                print(
+                    f"Timer Triggered: {timer.id} (Channel: {channel}, Message: {message})")
                 await self.system_event_callback(
                     f"[Timer Triggered]: {message}",
                     channel,  # type: ignore
@@ -113,19 +128,6 @@ class TimerTools(ToolBase):
 
 
 _timer_trigger: Optional[TimerTrigger] = None
-
-
-def _timer_to_dict(timer: TimerData) -> dict:
-    return {
-        "id": str(timer.id),
-        "trigger_time": timer.trigger_time.astimezone().isoformat(),
-        "message": timer.message,
-        "original_message": {
-            "author_id": str(timer.user_id),
-            "content": timer.original_message,
-            "created_at": timer.id.datetime.astimezone().isoformat(),
-        }
-    }
 
 
 @TimerTools.register(description="查看所有計時器")
