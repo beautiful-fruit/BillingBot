@@ -88,6 +88,8 @@ class TimerTools(ToolBase):
 當你收到由 system role 發出的 [Timer Triggered][Created by <@user_id>] 消息時，這意味著計時器已經觸發，你應該根據 message 參數的內容來執行相應的操作，而不是重新創建一個新的計時器，除非使用者再次要求你在未來的某個時間點提醒他們。
 此外，trigger_time 參數是預計觸發的時間，例如使用者要你在 10 分鐘後提醒他們，你需要將當前時間加上 10 分鐘，然後將結果作為 trigger_time 參數的值。
 **不要在 trigger_time 放入現在的時間**，你可以透過 calculate_timestamp 工具來計算 trigger_time 的值，這個工具會接受從現在起的秒數、分鐘數、小時數和天數，然後返回一個 Unix Timestamp，這個 Timestamp 就可以用作 trigger_time 的值。
+計時器不會發送給使用者任何消息，當計時器觸發時，只有你會收到一條消息，內容為「[Timer Triggered][Created by <@user_id>]: {message}」，其中 {message} 是你在創建計時器時提供的 message 參數的內容。
+你需要根據你所留下的 message 參數的內容來執行相應的操作，例如如果 message 是「提醒 <@user_id> 喝水」，當你收到計時器觸發的消息時，你應該在對應的頻道發送一條消息，內容為「<@user_id>，該喝水了！」。
 """
 
     @classmethod
