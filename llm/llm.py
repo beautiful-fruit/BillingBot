@@ -47,6 +47,7 @@ class LLMService():
         self,
         conn: Connection,
         channel: TextChannel,
+        in_system_event: bool = False,
     ) -> list[PossibleMessageType]:
         db_messages = await ChatRepository.get_channel_history(
             conn=conn,
@@ -85,7 +86,8 @@ class LLMService():
                     "content": msg.content
                 })  # type: ignore
 
-        messages.append({"role": "system", "content": system_prompt})
+        if not in_system_event:
+            messages.append({"role": "system", "content": system_prompt})
 
         return messages
 
@@ -167,10 +169,12 @@ class LLMService():
         conn: Connection,
         channel: TextChannel,
         message: Optional[Message] = None,
+        in_system_event: bool = False,
     ) -> tuple[str, ChatCompletionMessage]:
         messages = await self._build_messages(
             conn=conn,
             channel=channel,
+            in_system_event=in_system_event
         )
 
         final_response: str = ""
@@ -258,6 +262,7 @@ class LLMService():
             response, raw_message = await self._process_message(
                 conn=conn,
                 channel=text_channel,
+                in_system_event=True,
             )
 
             await ChatRepository.insert(
