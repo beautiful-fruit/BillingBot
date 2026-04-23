@@ -66,35 +66,28 @@ async def fun(bot: Bot, message: Message):
     elif "好" in message.content:
         await message.reply("不好")
 
-    if 712676831911739482 in list(map(lambda u: u.id, message.mentions)):
+    target_id = 712676831911739482
+    if any(u.id == target_id for u in message.mentions):
         channel = message.channel
-        main_mention = "<@712676831911739482>"
-        mentions = [
-            "<@712676831911739482>",
-            "<@&1474010223592341514>",
-            "<@&1474010833917968475>",
-            "<@&1456944613884563488>",
-            "<@&1483534240674086992>",
-            "<@&1371190001987092490>",
-            "<@&1370723863935062079>",
-            "<@&1479411931398799360>",
-            "<@&1286240209268244490>",
-            "<@&1474010447001948200>",
-            "<@&1474026056242696273>",
-            "<@&1493488278689546330>",
-            "<@&1493488655308951732>",
-            "<@&1493490700195467384>",
-        ]
-        content = message.content.rsplit(main_mention, 1)[-1]
-        if main_mention in content:
-            content = content.replace(main_mention, "")
-        content = content.strip()
+        target_member = next(u for u in message.mentions if u.id == target_id)
+        if hasattr(target_member, "roles"):
+            mentions = [
+                role.mention 
+                for role in target_member.roles[1:] 
+                if len(role.members) == 1
+            ]
+            mentions.insert(0, target_member.mention)
+            main_mention = target_member.mention
+            content = message.content.rsplit(main_mention, 1)[-1]
+            if main_mention in content:
+                content = content.replace(main_mention, "")
+            content = content.strip()
 
-        results = "\n".join([
-            f"{mention} {content}" for mention in mentions
-        ])
-
-        await channel.send(results)
+            if mentions:
+                results = "\n".join([
+                    f"{mention} {content}" for mention in mentions
+                ])
+                await channel.send(results)
 
         # for mention in mentions:
         #     await channel.send(f"{mention} {content}")
