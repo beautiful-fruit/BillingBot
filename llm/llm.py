@@ -170,12 +170,14 @@ class LLMService():
         channel: TextChannel,
         message: Optional[Message] = None,
         in_system_event: bool = False,
+        addition_messages: list[PossibleMessageType] = [],
     ) -> tuple[str, ChatCompletionMessage]:
         messages = await self._build_messages(
             conn=conn,
             channel=channel,
             in_system_event=in_system_event
         )
+        messages.extend(addition_messages)
 
         final_response: str = ""
         for _ in range(self.config.max_tool_iterations):
@@ -252,17 +254,21 @@ class LLMService():
         text_channel: TextChannel,
     ) -> None:
         async with get_db() as conn:
-            await ChatRepository.insert(
-                conn=conn,
-                channel_id=text_channel.id,
-                role="system",
-                content=event,
-            )
+            # await ChatRepository.insert(
+            #     conn=conn,
+            #     channel_id=text_channel.id,
+            #     role="system",
+            #     content=event,
+            # )
 
             response, raw_message = await self._process_message(
                 conn=conn,
                 channel=text_channel,
                 in_system_event=True,
+                addition_messages=[{
+                    "role": "system",
+                    "content": f"[{datetime.now().astimezone().isoformat()}]{event}"
+                }]
             )
 
             await ChatRepository.insert(
