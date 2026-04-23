@@ -67,7 +67,7 @@ class TimerTrigger():
                     continue
 
                 print(timer)
-                print(_timer_to_dict(timer))
+                print("Convert result", _timer_to_dict(timer))
                 print(dumps(_timer_to_dict(timer)).decode('utf-8'))
                 message = dumps(_timer_to_dict(timer=timer)).decode('utf-8')
                 print(f"Timer Triggered: {timer.id} (Channel: {channel}, Message: {message})")
