@@ -26,7 +26,6 @@ class LLMService():
     client: AsyncOpenAI
     config: OpenAIConfig
     prompts: PromptStore
-    tools: list[ChatCompletionToolUnionParam]
 
     def __init__(self, bot: Bot) -> None:
         self.bot = bot
@@ -37,17 +36,12 @@ class LLMService():
             api_key=self.config.api_key,
             base_url=self.config.base_url
         )
-        self.tools = []
 
     async def setup(self) -> None:
         await gather(*[
             tool_cls.setup(self.bot, self.system_event_callback)
             for tool_cls in AVAILABLE_TOOLS
         ])
-
-        self.tools = []
-        for tool_cls in AVAILABLE_TOOLS:
-            self.tools.extend(tool_cls.get_registered_tools())
 
     async def _build_messages(
         self,
@@ -97,12 +91,19 @@ class LLMService():
 
     async def _chat_create(
         self,
-        messages: list[PossibleMessageType]
+        messages: list[PossibleMessageType],
+        in_system_event: bool = False,
     ) -> ChatCompletionMessage:
+        tools = []
+        for tool_cls in AVAILABLE_TOOLS:
+            tools.extend(tool_cls.get_registered_tools(
+                in_system_event=in_system_event
+            ))
+
         completion = await self.client.chat.completions.create(
             model=self.config.model,
             messages=messages,
-            tools=self.tools,
+            tools=tools,
             tool_choice="auto",
             temperature=1.3,
         )

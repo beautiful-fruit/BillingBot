@@ -56,7 +56,6 @@ class TimerTrigger():
             removed_timers: list[TimerData] = []
             const_timers = self._timers.copy()
             for timer in const_timers:
-                print(f"Checking Timer: {timer.id} (Trigger Time: {timer.trigger_time.astimezone(UTC).isoformat()}, Current Time: {current_time.astimezone(UTC).isoformat()})")
                 if timer.trigger_time.astimezone(UTC) > current_time:
                     continue
 
@@ -65,11 +64,7 @@ class TimerTrigger():
                     removed_timers.append(timer)
                     continue
 
-                print(timer)
-                print("Convert result", _timer_to_dict(timer))
-                print(dumps(_timer_to_dict(timer)).decode('utf-8'))
                 message = dumps(_timer_to_dict(timer=timer)).decode('utf-8')
-                print(f"Timer Triggered: {timer.id} (Channel: {channel}, Message: {message})")
                 await self.system_event_callback(
                     f"[Timer Triggered]: {message}",
                     channel,  # type: ignore
@@ -173,7 +168,7 @@ async def calculate_timestamp(
     }
 
 
-@TimerTools.register(description="新增一個計時器")
+@TimerTools.register(description="新增一個計時器", enable_in_system_event=False)
 async def add_timer(
     channel: TextChannel,
     user_id: Annotated[str, "Discord 使用者 ID"],

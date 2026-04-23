@@ -37,17 +37,20 @@ class ToolData(Generic[U]):
         "user_or_member"
     ]]
     _tool_param: ChatCompletionToolUnionParam
+    enable_in_system_event: bool
 
     def __init__(
         self,
         class_name: str,
         func: Callable[..., U],
         description: str = "",
+        enable_in_system_event: bool = True
     ) -> None:
         self._class_name = class_name
         self._func = func
         self._description = description
         self._depends = {}
+        self.enable_in_system_event = enable_in_system_event
 
         parameters = signature(self._func).parameters
         properties = {}
@@ -70,6 +73,9 @@ class ToolData(Generic[U]):
                 self._depends[name] = "bot"
             elif type_set.issuperset({Message, NoneType}):
                 self._depends[name] = "message"
+            elif type_set.issuperset({Message}):
+                self._depends[name] = "message"
+                self.enable_in_system_event = False
             elif type_set.issuperset({TextChannel}):
                 self._depends[name] = "text_channel"
             elif type_set.issuperset({User, Member, NoneType}):
@@ -181,12 +187,18 @@ class ToolBase():
         cls._system_event_callback = system_event_callback
 
     @classmethod
-    def register(cls, description: str) -> Callable[[T], T]:
+    def register(
+        cls,
+        description: str,
+        *,
+        enable_in_system_event: bool = True
+    ) -> Callable[[T], T]:
         def decorator(func: T) -> T:
             tool = ToolData(
                 class_name=cls.class_name or cls.__name__,
                 func=func,
-                description=description
+                description=description,
+                enable_in_system_event=enable_in_system_event
             )
             cls._registered_tools[tool.function_name] = tool
             return func
@@ -194,7 +206,13 @@ class ToolBase():
         return decorator
 
     @classmethod
-    def get_registered_tools(cls) -> list[ChatCompletionToolUnionParam]:
+    def get_registered_tools(cls, in_system_event: bool = False) -> list[ChatCompletionToolUnionParam]:
+        if in_system_event:
+            return [
+                tool.tool_param
+                for tool in cls._registered_tools.values()
+                if tool.enable_in_system_event
+            ]
         return [
             tool.tool_param
             for tool in cls._registered_tools.values()
