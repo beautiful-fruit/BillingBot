@@ -19,7 +19,6 @@ from .base import ToolBase
 
 
 def _timer_to_dict(timer: TimerData) -> dict:
-    print("Converting TimerData to dict:", timer, type(timer.id))
     return {
         "id": str(timer.id),
         "trigger_time": timer.trigger_time.astimezone().isoformat(),
@@ -55,7 +54,8 @@ class TimerTrigger():
             current_time = datetime.now(UTC)
 
             removed_timers: list[TimerData] = []
-            const_timers = self._timers.copy()
+            const_timers = [timer for timer in self._timers]
+            print(const_timers)
             for timer in const_timers:
                 print(f"Checking Timer: {timer.id} (Trigger Time: {timer.trigger_time.astimezone(UTC).isoformat()}, Current Time: {current_time.astimezone(UTC).isoformat()})")
                 if timer.trigger_time.astimezone(UTC) > current_time:
