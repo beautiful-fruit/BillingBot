@@ -66,6 +66,16 @@ async def fun(bot: Bot, message: Message):
     elif "好" in message.content:
         await message.reply("不好")
 
+    if "點名了" in message.content:
+        mentions = [
+            "<@719196928214302821>",
+            "<@302774180611358720>",
+            "<@852064504846352394>",
+            "<@769066951494205480>",
+            "<@467147850007183361>"
+        ]
+        await channel.send("\n".join([mentions, "起床點名了"]))
+
     target_id = 712676831911739482
     if any(u.id == target_id for u in message.mentions):
         channel = message.channel
