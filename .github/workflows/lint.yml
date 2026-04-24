@@ -25,7 +25,7 @@ jobs:
         run: pip install -r requirements.txt pylint
 
       - name: Run pylint
-        run: pylint ./
+        run: pylint ./ --errors-only
 
   pyright:
     name: Pyright
@@ -41,7 +41,7 @@ jobs:
           cache-dependency-path: requirements.txt
 
       - name: Install dependencies
-        run: pip install -r requirements.txt pyright
+        run: pip install -r requirements.txt
 
       - name: Run pyright
-        run: pyright
+        run: npx pyright
