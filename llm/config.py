@@ -1,6 +1,9 @@
+from orjson import loads
+
 from os import getenv, listdir
 from os.path import isdir
 from re import match
+from typing import Optional
 
 AVAILABLE_MODES: list[str] = [
     re_match.group(1)
@@ -19,6 +22,7 @@ class OpenAIConfig():
     max_tokens: int = 10_000
     max_tool_iterations: int = 5
     response_mode: str
+    extra_body: Optional[dict] = None
 
     def __init__(self):
         api_key = getenv("OPENAI_API_KEY")
@@ -46,3 +50,7 @@ class OpenAIConfig():
         ))
 
         self.response_mode = "default" if "default" in AVAILABLE_MODES else AVAILABLE_MODES[0]
+
+        env_extra_body = getenv("OPENAI_EXTRA_BODY")
+        if env_extra_body:
+            self.extra_body = loads(env_extra_body)
