@@ -1,4 +1,11 @@
-from discord import Member, Role, User, TextChannel
+from discord import (
+    Forbidden,
+    Member,
+    NotFound,
+    Role,
+    User,
+    TextChannel,
+)
 
 from typing import Annotated, Union
 
@@ -75,4 +82,28 @@ async def get_role_by_id(
             _user_to_dict(member)
             for member in role.members
         ]
+    }
+
+
+@DiscordTools.register("通過訊息 ID 獲取訊息資料")
+async def get_message(
+    message_id: Annotated[str, "Discord 訊息 ID"],
+    channel: TextChannel
+) -> dict:
+    try:
+        message = await channel.fetch_message(int(message_id))
+    except NotFound:
+        return {
+            "error": "Message not found"
+        }
+    except Forbidden:
+        return {
+            "error": "Bot does not have permission to access this message"
+        }
+
+    return {
+        "id": str(message.id),
+        "content": message.content,
+        "author": _user_to_dict(message.author),
+        "created_at": str(message.created_at),
     }
