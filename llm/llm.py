@@ -6,6 +6,7 @@ from openai.types.chat import (
     ChatCompletionToolUnionParam,
     ChatCompletionMessageFunctionToolCall
 )
+from orjson import dumps
 
 from asyncio import gather
 from datetime import datetime
@@ -58,8 +59,6 @@ class LLMService():
         bot_id = self.bot.user.id if self.bot.user else None
         display_name = channel.guild.me.display_name
 
-        system_prompt = self.prompts.get_system_prompt(
-            self.config.response_mode)
         messages: list[PossibleMessageType] = [
             {"role": "system", "content": f"The assistant is currently running in a Discord bot with the username {display_name} and user ID {bot_id}. When responding, you can use this information to make your responses more relevant and personalized."},
             {"role": "system", "content": f"Current time: {datetime.now().isoformat()}"},
@@ -87,10 +86,19 @@ class LLMService():
                 })  # type: ignore
 
         if in_system_event:
-            while messages and messages[-1]["role"] != "user":
-                messages.pop()
+            messages_dump = dumps(messages).decode("utf-8")
+            messages = [
+                {
+                    "role": "system",
+                    "content": f"Current conversation messages (including system event message):\n{messages_dump}"
+                }
+            ]
+            system_prompt = self.prompts.event
         else:
-            messages.append({"role": "system", "content": system_prompt})
+            system_prompt = self.prompts.get_system_prompt(
+                self.config.response_mode
+            )
+        messages.append({"role": "system", "content": system_prompt})
 
         return messages
 
@@ -269,7 +277,7 @@ class LLMService():
                 channel=text_channel,
                 in_system_event=True,
                 addition_messages=[{
-                    "role": "system",
+                    "role": "user",
                     "content": f"[{datetime.now().astimezone().isoformat()}]{event}"
                 }]
             )

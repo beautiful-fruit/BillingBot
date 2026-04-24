@@ -10,6 +10,7 @@ class PromptStore:
     __builtin_prompts__ = ["system", "summary"]
     system: dict[str, str]
     summary: str
+    event: str
     _others: dict[str, str]
 
     def __init__(self) -> None:
@@ -34,6 +35,8 @@ class PromptStore:
                 self.system[response_mode] = content
             elif prompt_name == "summary":
                 self.summary = content
+            elif prompt_name == "event":
+                self.event = content
             else:
                 self._others[prompt_name] = content
 
