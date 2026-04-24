@@ -1,7 +1,5 @@
-from discord import Bot, Message, TextChannel
+from discord import Bot, Message
 from llm.llm import get_llm_service
-
-from re import findall
 
 
 async def handle_chat(bot: Bot, message: Message) -> None:

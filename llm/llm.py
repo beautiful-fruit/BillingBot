@@ -1,9 +1,9 @@
+# pylint: disable=relative-beyond-top-level
 from asyncpg import Connection
 from discord import Bot, Message, TextChannel
 from openai import AsyncOpenAI
 from openai.types.chat import (
     ChatCompletionMessage,
-    ChatCompletionToolUnionParam,
     ChatCompletionMessageFunctionToolCall
 )
 from orjson import dumps
@@ -60,8 +60,14 @@ class LLMService():
         display_name = channel.guild.me.display_name
 
         messages: list[PossibleMessageType] = [
-            {"role": "system", "content": f"The assistant is currently running in a Discord bot with the username {display_name} and user ID {bot_id}. When responding, you can use this information to make your responses more relevant and personalized."},
-            {"role": "system", "content": f"Current time: {datetime.now().isoformat()}"},
+            {
+                "role": "system",
+                "content": f"The assistant is currently running in a Discord bot with the username {display_name} and user ID {bot_id}. When responding, you can use this information to make your responses more relevant and personalized."  # pylint: disable=line-too-long
+            },
+            {
+                "role": "system",
+                "content": f"Current time: {datetime.now().isoformat()}"
+            },
         ]
 
         for tool_cls in AVAILABLE_TOOLS:
@@ -90,7 +96,7 @@ class LLMService():
             messages = [
                 {
                     "role": "system",
-                    "content": f"Current conversation messages (including system event message):\n{messages_dump}"
+                    "content": f"Current conversation messages (including system event message):\n{messages_dump}"  # pylint: disable=line-too-long
                 }
             ]
             system_prompt = self.prompts.event
@@ -181,14 +187,15 @@ class LLMService():
         channel: TextChannel,
         message: Optional[Message] = None,
         in_system_event: bool = False,
-        addition_messages: list[PossibleMessageType] = [],
+        addition_messages: Optional[list[PossibleMessageType]] = None,
     ) -> tuple[str, ChatCompletionMessage]:
         messages = await self._build_messages(
             conn=conn,
             channel=channel,
             in_system_event=in_system_event
         )
-        messages.extend(addition_messages)
+        if addition_messages:
+            messages.extend(addition_messages)
 
         final_response: str = ""
         for _ in range(self.config.max_tool_iterations):
@@ -244,7 +251,7 @@ class LLMService():
                 message_id=message.id
             )
 
-            response, raw_message = await self._process_message(
+            response, _ = await self._process_message(
                 conn=conn,
                 message=message,
                 channel=text_channel,
@@ -272,7 +279,7 @@ class LLMService():
             #     content=event,
             # )
 
-            response, raw_message = await self._process_message(
+            response, _ = await self._process_message(
                 conn=conn,
                 channel=text_channel,
                 in_system_event=True,
@@ -292,11 +299,12 @@ class LLMService():
         await text_channel.send(response)
 
 
+# pylint: disable=invalid-name
 _service_instance: Optional[LLMService] = None
 
 
 async def setup_llm_service(bot: Bot) -> None:
-    global _service_instance
+    global _service_instance  # pylint: disable=global-statement
     if _service_instance is not None:
         return
 

@@ -1,3 +1,4 @@
+# pylint: disable=import-outside-toplevel, unused-import
 from dotenv import load_dotenv
 
 from asyncio import get_event_loop, run

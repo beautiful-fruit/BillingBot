@@ -17,6 +17,7 @@ class Borrow(BaseModel):
     pending: bool = True
 
     @model_validator(mode="before")
+    @classmethod
     def check_amount_or_other(cls, data: dict) -> dict:
         if data.get("amount") is None and data.get("other") is None:
             raise ValueError("Either 'amount' or 'other' must be provided.")
@@ -36,4 +37,12 @@ class Borrow(BaseModel):
         return """
             INSERT INTO borrow_history (uid, from_uid, to_uid, amount, other, url, pending)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
-        """, (self.uid.value, self.from_uid, self.to_uid, self.amount, self.other, self.url, self.pending)
+        """, (
+            self.uid.value,  # pylint: disable=no-member
+            self.from_uid,
+            self.to_uid,
+            self.amount,
+            self.other,
+            self.url,
+            self.pending
+        )

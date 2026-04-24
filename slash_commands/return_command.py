@@ -1,3 +1,4 @@
+# pylint: skip-file
 from discord import ApplicationContext, Member, option
 
 from bot import bot

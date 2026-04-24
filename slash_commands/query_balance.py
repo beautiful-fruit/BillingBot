@@ -7,7 +7,7 @@ from bot import bot
 
 @bot.slash_command(name="balance", description="Get Deepseek balance")
 async def get_balance(ctx: ApplicationContext):
-    user = ctx.author
+    # user = ctx.author
     bot_user = bot.user
     if bot_user is None:
         await ctx.respond("Bot is not ready yet. Please try again later.")

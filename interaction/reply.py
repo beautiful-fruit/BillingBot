@@ -41,18 +41,18 @@ def checker(bot: Bot, message: Message) -> Optional[CheckResult]:
 
     # Check channel and user
     if message.channel.id != CHANNEL_ID or bot_user is None or user == bot_user or user.bot:
-        return
+        return None
 
     # Check format
     content = message.content
     mentions = message.mentions
     mentions_len = len(mentions)
     if "欠" not in content or mentions_len not in [1, 2]:
-        return
+        return None
     if mentions_len == 1 and mentions[0].id == user.id:
-        return
-    elif mentions_len == 2 and user.id not in [mention.id for mention in mentions]:
-        return
+        return None
+    if mentions_len == 2 and user.id not in [mention.id for mention in mentions]:
+        return None
 
     return CheckResult(
         user=user,
@@ -89,7 +89,7 @@ def parser(
 
     amount_str = content[end_idx:].strip()
     if not amount_str:
-        return
+        return None
 
     # Parse amount
     try:
@@ -99,7 +99,7 @@ def parser(
 
         amount = int(filter_amount_str.strip())
         if amount == 0:
-            return
+            return None
 
         if amount < 0:
             amount = -amount
@@ -174,12 +174,22 @@ async def reply(bot: Bot, message: Message):
         Button(
             style=ButtonStyle.green,
             label="確認",
-            custom_id=f"{CUSTOM_ID_PREFIX}confirm_borrow_trgs_{another_user.id}_trge_uid_{borrow_data.uid.value}",
+            custom_id="".join([
+                CUSTOM_ID_PREFIX,
+                "confirm_borrow_trgs_",
+                f"{another_user.id}_trge_",
+                f"uid_{borrow_data.uid.value}",
+            ])
         ),
         Button(
             style=ButtonStyle.red,
             label="拒絕",
-            custom_id=f"{CUSTOM_ID_PREFIX}reject_borrow_trgs_{another_user.id}_trge_uid_{borrow_data.uid.value}",
+            custom_id="".join([
+                CUSTOM_ID_PREFIX,
+                "reject_borrow_trgs_",
+                f"{another_user.id}_trge_",
+                f"uid_{borrow_data.uid.value}",
+            ])
         ),
         store=False
     )

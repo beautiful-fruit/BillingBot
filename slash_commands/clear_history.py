@@ -24,4 +24,3 @@ async def clear_history(ctx: ApplicationContext):
         )
 
     await ctx.respond("已清除此頻道的對話歷史。")
-    

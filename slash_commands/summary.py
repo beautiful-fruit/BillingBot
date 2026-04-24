@@ -8,7 +8,7 @@ from repository.summary_repository import SummaryRepository
 
 
 @bot.slash_command(name="summary", description="Get summary of debts")
-async def summary(ctx: ApplicationContext):
+async def summary_cmd(ctx: ApplicationContext):
     user = ctx.author
     bot_user = bot.user
     if bot_user is None:

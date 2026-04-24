@@ -1,4 +1,4 @@
-from discord import Bot, Interaction
+from discord import Interaction
 
 from datetime import datetime
 try:
@@ -14,12 +14,12 @@ from utils.edit_origin_message import request_accept, request_reject, request_ti
 CUSTOM_ID_PREFIX = getenv("CUSTOM_ID_PREFIX", "default_prefix")
 
 
-async def checker(bot: Bot, interaction: Interaction) -> bool:
+async def checker(interaction: Interaction) -> bool:
     custom_id = interaction.custom_id
     return custom_id is not None and custom_id.startswith(CUSTOM_ID_PREFIX)
 
 
-async def func(bot: Bot, interaction: Interaction):
+async def func(interaction: Interaction):
     custom_id = interaction.custom_id
     if custom_id is None:
         return

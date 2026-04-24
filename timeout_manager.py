@@ -1,6 +1,7 @@
 from discord import Message
 
 from asyncio import sleep as asleep
+from dataclasses import dataclass
 from datetime import datetime
 try:
     from datetime import UTC
@@ -11,15 +12,11 @@ except ImportError:
 from utils.edit_origin_message import request_timeout
 
 
+@dataclass
 class Data:
     uid: int
     is_borrow: bool
     message: Message
-
-    def __init__(self, uid: int, is_borrow: bool, message: Message) -> None:
-        self.uid = uid
-        self.is_borrow = is_borrow
-        self.message = message
 
 
 _data: dict[int, Data] = {}

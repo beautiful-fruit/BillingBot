@@ -19,4 +19,11 @@ class TimerData(BaseModel):
         return """
             INSERT INTO timers (id, channel_id, user_id, trigger_time, message, original_message)
             VALUES ($1, $2, $3, $4, $5, $6)
-        """, (self.id.value, self.channel_id, self.user_id, self.trigger_time, self.message, self.original_message)
+        """, (
+            self.id.value,  # pylint: disable=no-member
+            self.channel_id,
+            self.user_id,
+            self.trigger_time,
+            self.message,
+            self.original_message
+        )

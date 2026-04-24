@@ -2,9 +2,9 @@ from asyncpg import create_pool, Pool, Connection
 
 from contextlib import asynccontextmanager
 from os import getenv
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 
-_pool = None
+_pool: Optional[Pool] = None  # pylint: disable=invalid-name
 
 
 async def create_tables(conn: Connection) -> None:
@@ -36,15 +36,15 @@ async def create_tables(conn: Connection) -> None:
 
 @asynccontextmanager
 async def init_db() -> AsyncGenerator[Pool, None]:
-    global _pool
+    global _pool  # pylint: disable=global-statement
     if _pool:
         raise RuntimeError("Database pool is already initialized.")
     dsn = getenv(
         "POSTGRES_DB_URL",
         "postgresql://billing:billing@localhost:5432/billing"
     )
-    min_size = int(getenv("POSTGRES_POOL_MIN_SIZE", "10"))
-    max_size = int(getenv("POSTGRES_POOL_MAX_SIZE", min_size))
+    min_size = int(getenv("POSTGRES_POOL_MIN_SIZE", "5"))
+    max_size = int(getenv("POSTGRES_POOL_MAX_SIZE", "10"))
 
     pool = await create_pool(
         dsn=dsn,

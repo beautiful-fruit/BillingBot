@@ -142,15 +142,15 @@ class ToolData(Generic[U]):
 
         if ann is str:
             return "string"
-        elif ann is int:
+        if ann is int:
             return "integer"
-        elif ann is float:
+        if ann is float:
             return "number"
-        elif ann is bool:
+        if ann is bool:
             return "boolean"
-        elif ann in [list, tuple]:
+        if ann in [list, tuple]:
             return "array"
-        elif ann is dict:
+        if ann is dict:
             return "object"
 
         raise ValueError(f"Unsupported parameter type: {ann}")
@@ -206,7 +206,10 @@ class ToolBase():
         return decorator
 
     @classmethod
-    def get_registered_tools(cls, in_system_event: bool = False) -> list[ChatCompletionToolUnionParam]:
+    def get_registered_tools(
+        cls,
+        in_system_event: bool = False
+    ) -> list[ChatCompletionToolUnionParam]:
         if in_system_event:
             return [
                 tool.tool_param
@@ -243,4 +246,4 @@ class ToolBase():
             return dumps(result).decode("utf-8")
         except Exception as e:
             raise ValueError(
-                f"Tool function return value is not JSON serializable: {str(e)}")
+                f"Tool function return value is not JSON serializable: {str(e)}") from e

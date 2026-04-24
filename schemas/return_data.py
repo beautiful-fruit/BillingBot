@@ -1,8 +1,6 @@
 from pydantic import BaseModel, Field, model_validator
 from pydantic_snowflake import SnowflakeId, SnowflakeGenerator
 
-from typing import Optional
-
 
 generator = SnowflakeGenerator()
 
@@ -28,4 +26,4 @@ class Return(BaseModel):
         return """
             INSERT INTO return_history (uid, from_uid, to_uid, amount, pending)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
-        """, (self.uid.value, self.from_uid, self.to_uid, self.amount, self.pending)
+        """, (self.uid.value, self.from_uid, self.to_uid, self.amount, self.pending)  # pylint: disable=no-member

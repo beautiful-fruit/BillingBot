@@ -1,8 +1,6 @@
 from os import listdir
 from os.path import isdir
 
-from .config import AVAILABLE_MODES
-
 PROMPTS_DIR = "prompts"
 
 

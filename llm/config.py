@@ -34,15 +34,15 @@ class OpenAIConfig():
         self.model = model
         self.max_history_messages = int(getenv(
             "OPENAI_MAX_HISTORY_MESSAGES",
-            self.max_history_messages
+            str(self.max_history_messages)
         ))
         self.max_tokens = int(getenv(
             "OPENAI_MAX_TOKENS",
-            self.max_tokens
+            str(self.max_tokens)
         ))
         self.max_tool_iterations = int(getenv(
             "OPENAI_MAX_TOOL_ITERATIONS",
-            self.max_tool_iterations
+            str(self.max_tool_iterations)
         ))
 
         self.response_mode = "default" if "default" in AVAILABLE_MODES else AVAILABLE_MODES[0]

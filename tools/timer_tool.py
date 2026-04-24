@@ -17,6 +17,8 @@ from tools.base import SystemEventCallback
 
 from .base import ToolBase
 
+_timer_trigger: Optional["TimerTrigger"] = None  # pylint: disable=invalid-name
+
 
 def _timer_to_dict(timer: TimerData) -> dict:
     return {
@@ -59,7 +61,8 @@ class TimerTrigger():
                 if timer.trigger_time.astimezone(UTC) > current_time:
                     continue
 
-                channel = self._bot.get_channel(timer.channel_id) or await self._bot.fetch_channel(timer.channel_id)
+                channel = self._bot.get_channel(timer.channel_id) \
+                    or await self._bot.fetch_channel(timer.channel_id)
                 if not channel:
                     removed_timers.append(timer)
                     continue
@@ -148,8 +151,12 @@ Assistant: 好的，我已經幫你設置了一個計時器，當時間到達時
 """
 
     @classmethod
-    async def setup(cls, bot: Bot, system_event_callback: Callable[[str, TextChannel], Awaitable[None]]) -> None:
-        global _timer_trigger
+    async def setup(
+        cls,
+        bot: Bot,
+        system_event_callback: Callable[[str, TextChannel], Awaitable[None]]
+    ) -> None:
+        global _timer_trigger  # pylint: disable=global-statement
         await super().setup(bot, system_event_callback)
 
         if _timer_trigger is None:
@@ -160,9 +167,6 @@ Assistant: 好的，我已經幫你設置了一個計時器，當時間到達時
             await _timer_trigger.setup()
 
         return
-
-
-_timer_trigger: Optional[TimerTrigger] = None
 
 
 @TimerTools.register(description="查看所有計時器")

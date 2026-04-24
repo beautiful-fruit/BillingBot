@@ -1,8 +1,9 @@
-from discord import Bot, Embed, EmbedAuthor, Message
+from discord import Bot, Embed, EmbedAuthor, Member, Message
 
 from asyncio import sleep as asleep
 from datetime import datetime
 from os import getenv
+from subprocess import run
 
 SPEC_USER_ID = int(getenv("SPEC_USER_ID", "0"))
 SPEC_SHELL_PATH = getenv("SPEC_SHELL_PATH", "")
@@ -20,7 +21,7 @@ async def fun(bot: Bot, message: Message):
             embed = Embed(
                 color=0xFF8800,
                 title="毀滅!!!",
-                description=f"毀滅",
+                description="毀滅",
                 timestamp=datetime.now(),
                 author=EmbedAuthor(
                     name=bot_user.display_name,
@@ -41,8 +42,7 @@ async def fun(bot: Bot, message: Message):
             await asleep(1)
             await message.channel.send("毀滅!!")
 
-            from subprocess import run
-            run([SPEC_SHELL_PATH])
+            run([SPEC_SHELL_PATH], check=False)
         else:
             await message.reply("毀滅")
 
@@ -67,37 +67,41 @@ async def fun(bot: Bot, message: Message):
         await message.reply("不好")
 
     if "點名了" in message.content:
-        mentions = [
+        mention_strubg = " ".join([
             "<@719196928214302821>",
             "<@302774180611358720>",
             "<@852064504846352394>",
             "<@769066951494205480>",
-            "<@467147850007183361>"
-        ]
-        await channel.send("\n".join([mentions, "起床點名了"]))
+            "<@467147850007183361>",
+        ])
+        await message.channel.send("\n".join([mention_strubg, "起床點名了"]))
 
     target_id = 712676831911739482
     if any(u.id == target_id for u in message.mentions):
         channel = message.channel
-        target_member = next(u for u in message.mentions if u.id == target_id)
-        if hasattr(target_member, "roles"):
-            mentions = [
-                role.mention 
-                for role in target_member.roles[1:] 
-                if len(role.members) == 1
-            ]
-            mentions.insert(0, target_member.mention)
-            main_mention = target_member.mention
-            content = message.content.rsplit(main_mention, 1)[-1]
-            if main_mention in content:
-                content = content.replace(main_mention, "")
-            content = content.strip()
+        target_member = next(
+            u
+            for u in message.mentions
+            if u.id == target_id and isinstance(u, Member)
+        )
 
-            if mentions:
-                results = "\n".join([
-                    f"{mention} {content}" for mention in mentions
-                ])
-                await channel.send(results)
+        mentions = [
+            role.mention
+            for role in target_member.roles[1:]
+            if len(role.members) == 1
+        ]
+        mentions.insert(0, target_member.mention)
+        main_mention = target_member.mention
+        content = message.content.rsplit(main_mention, 1)[-1]
+        if main_mention in content:
+            content = content.replace(main_mention, "")
+        content = content.strip()
+
+        if mentions:
+            results = "\n".join([
+                f"{mention} {content}" for mention in mentions
+            ])
+            await channel.send(results)
 
         # for mention in mentions:
         #     await channel.send(f"{mention} {content}")

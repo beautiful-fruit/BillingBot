@@ -38,8 +38,8 @@ async def on_message(message: Message):
 
 @bot.event
 async def on_interaction(interaction: Interaction):
-    if await confirm_or_reject_checker(bot, interaction):
-        await confirm_or_reject_func(bot, interaction)
+    if await confirm_or_reject_checker(interaction):
+        await confirm_or_reject_func(interaction)
         return
 
     await bot.process_application_commands(interaction)

@@ -22,4 +22,12 @@ class ChatMessage(BaseModel):
         return """
             INSERT INTO chat_messages (id, channel_id, user_id, username, role, content, message_id)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
-        """, (self.id.value, self.channel_id, self.user_id, self.username, self.role, self.content, self.message_id)
+        """, (
+            self.id.value,  # pylint: disable=no-member
+            self.channel_id,
+            self.user_id,
+            self.username,
+            self.role,
+            self.content,
+            self.message_id
+        )

@@ -74,8 +74,7 @@ class ChatRepository:
         # 計算要刪除的數量（前15%）
         delete_count = int(count_result * percentage)
 
-        if delete_count < 1:  # 如果計算結果小於1，至少刪除1條
-            delete_count = 1
+        delete_count = max(delete_count, 1)  # 至少刪除1條訊息
 
         # 刪除最舊的訊息
         await conn.execute("""

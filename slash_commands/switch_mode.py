@@ -1,8 +1,6 @@
 from discord import ApplicationContext, option
 
 from bot import bot
-from db import get_db
-from repository.chat_repository import ChatRepository
 from llm.config import AVAILABLE_MODES
 from llm.llm import get_llm_service
 
