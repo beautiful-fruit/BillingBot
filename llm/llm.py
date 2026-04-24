@@ -15,6 +15,7 @@ from typing import Optional
 from db import get_db
 from repository.chat_repository import ChatRepository
 from tools import AVAILABLE_TOOLS
+from utils.send_like_human import send_like_human
 
 from .config import OpenAIConfig
 from .filter import post_filter
@@ -296,7 +297,7 @@ class LLMService():
                 content=response,
             )
 
-        await text_channel.send(response)
+        await send_like_human(text_channel, response)
 
 
 # pylint: disable=invalid-name
