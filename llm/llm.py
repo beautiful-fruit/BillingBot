@@ -36,7 +36,7 @@ class LLMService():
 
         self.client = AsyncOpenAI(
             api_key=self.config.api_key,
-            base_url=self.config.base_url
+            base_url=self.config.base_url,
         )
 
     async def setup(self) -> None:
@@ -126,6 +126,7 @@ class LLMService():
             tools=tools,
             tool_choice="auto",
             temperature=1.3,
+            extra_body=self.config.extra_body,
         )
 
         return completion.choices[0].message
@@ -254,7 +255,7 @@ class LLMService():
                         pass
 
                 if isinstance(reply_message, Message) and reply_message.author.id != bot_user.id:
-                    message_content = f"[Replying to {reply_message.author.display_name}'s message: {reply_message.content}]\n{message_content}"
+                    message_content = f"[Replying to {reply_message.author.display_name}'s message: {reply_message.content}]\n{message_content}"  # pylint: disable=line-too-long
 
             await ChatRepository.insert(
                 conn=conn,
