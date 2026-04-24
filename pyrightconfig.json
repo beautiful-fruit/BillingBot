@@ -1,0 +1,10 @@
+{
+  "pythonVersion": "3.12",
+  "exclude": [
+    ".venv",
+    "__pycache__",
+    "test.py",
+    "**/node_modules",
+    "**/.*"
+  ]
+}
