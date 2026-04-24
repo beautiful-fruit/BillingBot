@@ -1,6 +1,6 @@
 # pylint: disable=relative-beyond-top-level
 from asyncpg import Connection
-from discord import Bot, Message, TextChannel
+from discord import Bot, Forbidden, Message, NotFound, TextChannel
 from openai import AsyncOpenAI
 from openai.types.chat import (
     ChatCompletionMessage,
@@ -239,14 +239,28 @@ class LLMService():
         if not isinstance(text_channel, TextChannel):
             return "抱歉，我只能在文字頻道中回應。"
 
+        bot_user = self.bot.user
         user = message.author
 
         async with get_db() as conn:
+            message_content = message.content
+            if bot_user and message.reference:
+                reference = message.reference
+                reply_message = reference.resolved
+                if reply_message is None and reference.message_id:
+                    try:
+                        reply_message = await text_channel.fetch_message(reference.message_id)
+                    except (NotFound, Forbidden):
+                        pass
+
+                if isinstance(reply_message, Message) and reply_message.author.id != bot_user.id:
+                    message_content = f"[Replying to {reply_message.author.display_name}'s message: {reply_message.content}]\n{message_content}"
+
             await ChatRepository.insert(
                 conn=conn,
                 channel_id=text_channel.id,
                 role="user",
-                content=message.content,
+                content=message_content,
                 user_id=user.id,
                 username=user.display_name,
                 message_id=message.id
