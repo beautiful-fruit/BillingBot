@@ -2,6 +2,7 @@ from discord import Bot, Message, TextChannel, Thread
 
 from llm.llm import get_llm_service
 from utils.send_like_human import send_like_human
+import re
 
 
 async def handle_chat(bot: Bot, message: Message) -> None:
@@ -11,7 +12,8 @@ async def handle_chat(bot: Bot, message: Message) -> None:
     if bot_user is None or bot_user == user or user.bot:
         return None
 
-    if bot_user not in message.mentions:
+    pattern = r'([a-zA-Z][\u4e00-\u9fa5])|([\u4e00-\u9fa5][a-zA-Z])'
+    if bot_user not in message.mentions and not re.search(pattern,  message.content):
         return None
 
     content = message.content
