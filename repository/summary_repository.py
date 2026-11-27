@@ -22,3 +22,17 @@ class SummaryRepository:
             )
             for user1, user2, amount in rows
         }
+
+    @staticmethod
+    async def get_all_nonzero(conn: Connection) -> list[Summary]:
+        rows = await conn.fetch(
+            """
+            SELECT user1, user2, amount FROM summary
+            WHERE amount <> 0
+            """
+        )
+
+        return [
+            Summary(user1=user1, user2=user2, amount=amount)
+            for user1, user2, amount in rows
+        ]
