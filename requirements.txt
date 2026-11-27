@@ -21,6 +21,7 @@ mccabe==0.7.0
 multidict==6.7.0
 openai==2.32.0
 orjson==3.11.8
+pillow==13.0.0
 platformdirs==4.9.6
 propcache==0.4.1
 py-cord==2.7.0
