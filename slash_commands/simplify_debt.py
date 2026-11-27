@@ -1,14 +1,46 @@
-from discord import ApplicationContext, Embed, EmbedAuthor, EmbedField
+from discord import (
+    ApplicationContext,
+    DiscordException,
+    Embed,
+    EmbedAuthor,
+    EmbedField,
+    File,
+)
 
+from asyncio import gather, to_thread
 from datetime import datetime
 
 from bot import bot
 from db import get_db
 from repository.summary_repository import SummaryRepository
-from utils.debt_planner import plan_settlement
+from utils.debt_graph import render_debt_graph
+from utils.debt_planner import Transfer, plan_settlement
 
 # Discord embed field value 上限
 MAX_FIELD_VALUE = 1024
+AVATAR_SIZE = 128
+GRAPH_FILENAME = "debt_graph.png"
+
+
+async def _fetch_avatar(ctx: ApplicationContext, uid: int) -> bytes | None:
+    try:
+        user = (
+            (ctx.guild.get_member(uid) if ctx.guild else None)
+            or bot.get_user(uid)
+            or await bot.fetch_user(uid)
+        )
+        asset = user.display_avatar.with_size(AVATAR_SIZE).with_static_format("png")
+        return await asset.read()
+    except DiscordException:
+        return None
+
+
+async def _build_graph(ctx: ApplicationContext, transfers: list[Transfer]) -> File:
+    uids = sorted({uid for t in transfers for uid in (t.payer, t.payee)})
+    avatar_list = await gather(*(_fetch_avatar(ctx, uid) for uid in uids))
+    avatars = dict(zip(uids, avatar_list))
+    image = await to_thread(render_debt_graph, transfers, avatars)
+    return File(image, filename=GRAPH_FILENAME)
 
 
 @bot.slash_command(
@@ -20,6 +52,9 @@ async def simplify_cmd(ctx: ApplicationContext):
     if bot_user is None:
         await ctx.respond("Bot is not ready yet. Please try again later.")
         return
+
+    # 抓取頭像與繪圖可能超過 3 秒，先 defer 避免 interaction 逾時
+    await ctx.defer()
 
     # 僅進行讀取：以 read-only transaction 在資料庫層級保證不會有任何寫入
     async with get_db() as conn:
@@ -53,4 +88,9 @@ async def simplify_cmd(ctx: ApplicationContext):
         ]
     )
 
-    await ctx.respond(embed=embed)
+    if not transfers:
+        await ctx.respond(embed=embed)
+        return
+
+    embed.set_image(url=f"attachment://{GRAPH_FILENAME}")
+    await ctx.respond(embed=embed, file=await _build_graph(ctx, transfers))

@@ -9,6 +9,7 @@ dependencies = [
     "asyncpg>=0.31.0",
     "openai>=2.32.0",
     "orjson>=3.11.8",
+    "pillow>=13.0.0",
     "py-cord>=2.7.0",
     "pydantic>=2.12.5",
     "pydantic-snowflake>=0.1.2",
